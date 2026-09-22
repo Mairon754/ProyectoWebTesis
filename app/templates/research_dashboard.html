@@ -1,0 +1,333 @@
+{% extends "base.html" %}
+
+{% block title %}Panel de investigación · RIASEC{% endblock %}
+
+{% block styles %}
+<link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/research.css') }}"
+>
+{% endblock %}
+
+{% block header_extra %}
+<div class="research-user" aria-label="Sesión de investigador">
+    <span class="research-user__name">{{ researcher.display_name }}</span>
+    <form method="post" action="{{ url_for('research.logout') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button class="button button--ghost button--compact" type="submit">
+            Cerrar sesión
+        </button>
+    </form>
+</div>
+{% endblock %}
+
+{% block main_class %}page-shell research-shell{% endblock %}
+
+{% block content %}
+<section class="research-hero" aria-labelledby="research-title">
+    <div>
+        <p class="eyebrow">Módulo privado de investigadores</p>
+        <h1 id="research-title">Panel de investigación</h1>
+        <p>
+            Consulta el estado de la recolección, filtra sesiones, revisa la
+            calidad de los registros y genera datasets para análisis.
+        </p>
+    </div>
+    <div class="research-hero__badge" aria-label="Prueba piloto">
+        <strong>Prueba piloto</strong>
+        <span>Datos anonimizados</span>
+    </div>
+</section>
+
+<section class="research-metrics" aria-label="Resumen de recolección">
+    <article class="research-metric">
+        <span>Participantes</span>
+        <strong>{{ summary.participants }}</strong>
+    </article>
+    <article class="research-metric">
+        <span>Evaluaciones completas</span>
+        <strong>{{ summary.completed }}</strong>
+    </article>
+    <article class="research-metric">
+        <span>En progreso</span>
+        <strong>{{ summary.in_progress }}</strong>
+    </article>
+    <article class="research-metric">
+        <span>Aptas para ML</span>
+        <strong>{{ summary.included_ml }}</strong>
+    </article>
+</section>
+
+<section class="research-panel" aria-labelledby="filters-title">
+    <div class="research-panel__heading">
+        <div>
+            <p class="eyebrow">Segmentación</p>
+            <h2 id="filters-title">Filtros de investigación</h2>
+        </div>
+        <a class="button button--ghost" href="{{ url_for('research.dashboard') }}">
+            Limpiar filtros
+        </a>
+    </div>
+
+    <form method="get" class="research-filters">
+        <div class="field-group">
+            <label for="institution_code">Institución</label>
+            <select id="institution_code" name="institution_code">
+                <option value="">Todas</option>
+                {% for institution in options.institutions %}
+                    <option
+                        value="{{ institution }}"
+                        {% if filters.institution_code == institution %}selected{% endif %}
+                    >{{ institution }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="field-group">
+            <label for="grade">Grado</label>
+            <select id="grade" name="grade">
+                <option value="">10 y 11</option>
+                <option value="10" {% if filters.grade == 10 %}selected{% endif %}>10</option>
+                <option value="11" {% if filters.grade == 11 %}selected{% endif %}>11</option>
+            </select>
+        </div>
+
+        <div class="field-group">
+            <label for="municipality">Municipio</label>
+            <select id="municipality" name="municipality">
+                <option value="">Todos</option>
+                {% for municipality in options.municipalities %}
+                    <option
+                        value="{{ municipality }}"
+                        {% if filters.municipality == municipality %}selected{% endif %}
+                    >{{ municipality }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="field-group">
+            <label for="zone">Zona</label>
+            <select id="zone" name="zone">
+                <option value="">Todas</option>
+                <option value="urbana" {% if filters.zone == 'urbana' %}selected{% endif %}>Urbana</option>
+                <option value="rural" {% if filters.zone == 'rural' %}selected{% endif %}>Rural</option>
+            </select>
+        </div>
+
+        <div class="field-group">
+            <label for="status">Estado</label>
+            <select id="status" name="status">
+                <option value="">Todos</option>
+                <option value="in_progress" {% if filters.status == 'in_progress' %}selected{% endif %}>En progreso</option>
+                <option value="completed" {% if filters.status == 'completed' %}selected{% endif %}>Completada</option>
+                <option value="abandoned" {% if filters.status == 'abandoned' %}selected{% endif %}>Abandonada</option>
+            </select>
+        </div>
+
+        <div class="field-group">
+            <label for="quality_status">Calidad</label>
+            <select id="quality_status" name="quality_status">
+                <option value="">Todas</option>
+                <option value="pending" {% if filters.quality_status == 'pending' %}selected{% endif %}>Pendiente</option>
+                <option value="valid" {% if filters.quality_status == 'valid' %}selected{% endif %}>Válida</option>
+                <option value="excluded" {% if filters.quality_status == 'excluded' %}selected{% endif %}>Excluida</option>
+            </select>
+        </div>
+
+        <div class="field-group">
+            <label for="started_from">Desde</label>
+            <input
+                id="started_from"
+                name="started_from"
+                type="date"
+                value="{{ filters.started_from.isoformat() if filters.started_from else '' }}"
+            >
+        </div>
+
+        <div class="field-group">
+            <label for="started_to">Hasta</label>
+            <input
+                id="started_to"
+                name="started_to"
+                type="date"
+                value="{{ filters.started_to.isoformat() if filters.started_to else '' }}"
+            >
+        </div>
+
+        <div class="research-filters__actions">
+            <button class="button button--primary" type="submit">Aplicar filtros</button>
+        </div>
+    </form>
+</section>
+
+<section class="research-panel" aria-labelledby="datasets-title">
+    <div class="research-panel__heading">
+        <div>
+            <p class="eyebrow">Gestión de datasets</p>
+            <h2 id="datasets-title">Descargas para investigación</h2>
+        </div>
+        <p class="research-panel__note">
+            Los filtros anteriores también se aplican a las exportaciones.
+        </p>
+    </div>
+
+    <div class="dataset-grid">
+        {% set descriptions = {
+            'results': 'Resultados RIASEC y variables de contexto para análisis estadístico.',
+            'ml': 'Predictores G01-G12, materias y actividades con RIASEC como variable objetivo. Solo registros validados para ML.',
+            'transformer': 'Textos T01-T03 con etiquetas RIASEC. Solo registros validados para ML/NLP.',
+            'master': 'Registro maestro para auditoría y trazabilidad, incluyendo IP01-IP60. No usar las respuestas O*NET como X del modelo principal.',
+            'quality': 'Completitud, tiempos, uso del lector, cambios de respuesta y decisión de inclusión/exclusión.'
+        } %}
+        {% for kind in dataset_kinds %}
+            {% set csv_url = url_for('research.export_dataset', kind=kind, file_format='csv') %}
+            {% set xlsx_url = url_for('research.export_dataset', kind=kind, file_format='xlsx') %}
+            <article class="dataset-card">
+                <span class="dataset-card__tag">{{ kind|upper }}</span>
+                <h3>{{ dataset_labels[kind] }}</h3>
+                <p>{{ descriptions[kind] }}</p>
+                <div class="dataset-card__actions">
+                    <a
+                        class="button button--ghost"
+                        href="{{ csv_url }}{% if export_query %}?{{ export_query }}{% endif %}"
+                    >CSV</a>
+                    <a
+                        class="button button--primary"
+                        href="{{ xlsx_url }}{% if export_query %}?{{ export_query }}{% endif %}"
+                    >Excel</a>
+                </div>
+            </article>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="research-panel" aria-labelledby="quality-title">
+    <div class="research-panel__heading">
+        <div>
+            <p class="eyebrow">Control de calidad</p>
+            <h2 id="quality-title">Sesiones recopiladas</h2>
+        </div>
+        <div class="quality-summary" aria-label="Resumen de calidad">
+            <span>Válidas: <strong>{{ summary.quality_valid }}</strong></span>
+            <span>Pendientes: <strong>{{ summary.quality_pending }}</strong></span>
+            <span>Excluidas: <strong>{{ summary.quality_excluded }}</strong></span>
+        </div>
+    </div>
+
+    {% if sessions %}
+        <div class="research-table-wrap">
+            <table class="research-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Participante</th>
+                        <th scope="col">Contexto</th>
+                        <th scope="col">Estado</th>
+                        <th scope="col">RIASEC</th>
+                        <th scope="col">Calidad / dataset</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for assessment in sessions %}
+                        {% set review = assessment.quality_review %}
+                        <tr>
+                            <td>
+                                <strong>{{ assessment.participant.participant_code }}</strong>
+                                <small>{{ assessment.started_at.strftime('%Y-%m-%d %H:%M') if assessment.started_at else '' }}</small>
+                            </td>
+                            <td>
+                                Grado {{ assessment.grade }}<br>
+                                {{ assessment.institution_code }}<br>
+                                <small>{{ assessment.municipality }} · {{ assessment.zone }}</small>
+                            </td>
+                            <td>
+                                <span class="status-chip status-chip--{{ assessment.status }}">
+                                    {{ assessment.status }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if assessment.riasec_result %}
+                                    <strong>{{ assessment.riasec_result.holland_code or 'Empate' }}</strong>
+                                    <small>
+                                        R{{ assessment.riasec_result.score_r }} ·
+                                        I{{ assessment.riasec_result.score_i }} ·
+                                        A{{ assessment.riasec_result.score_a }} ·
+                                        S{{ assessment.riasec_result.score_s }} ·
+                                        E{{ assessment.riasec_result.score_e }} ·
+                                        C{{ assessment.riasec_result.score_c }}
+                                    </small>
+                                {% else %}
+                                    <span class="muted">Pendiente</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if assessment.status == 'completed' %}
+                                <form
+                                    method="post"
+                                    action="{{ url_for('research.update_quality', session_id=assessment.id) }}"
+                                    class="quality-form"
+                                >
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                    <label>
+                                        Estado
+                                        <select name="quality_status">
+                                            {% set current_quality = review.quality_status if review else 'pending' %}
+                                            <option value="pending" {% if current_quality == 'pending' %}selected{% endif %}>Pendiente</option>
+                                            <option value="valid" {% if current_quality == 'valid' %}selected{% endif %}>Válida</option>
+                                            <option value="excluded" {% if current_quality == 'excluded' %}selected{% endif %}>Excluida</option>
+                                        </select>
+                                    </label>
+                                    <label>
+                                        Versión dataset
+                                        <input
+                                            type="text"
+                                            name="dataset_version"
+                                            maxlength="30"
+                                            placeholder="RIASEC_PILOTO_V1"
+                                            value="{{ review.dataset_version if review and review.dataset_version else '' }}"
+                                        >
+                                    </label>
+                                    <label>
+                                        Motivo de exclusión
+                                        <input
+                                            type="text"
+                                            name="exclusion_reason"
+                                            maxlength="250"
+                                            value="{{ review.exclusion_reason if review and review.exclusion_reason else '' }}"
+                                        >
+                                    </label>
+                                    <label class="quality-form__check">
+                                        <input
+                                            type="checkbox"
+                                            name="included_ml"
+                                            value="1"
+                                            {% if review and review.included_ml %}checked{% endif %}
+                                        >
+                                        Incluir en ML/NLP
+                                    </label>
+                                    <button class="button button--ghost button--compact" type="submit">
+                                        Guardar revisión
+                                    </button>
+                                </form>
+                                {% else %}
+                                    <span class="muted">Disponible al completar la evaluación.</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if sessions|length >= 100 %}
+            <p class="research-panel__note">
+                Se muestran las 100 sesiones más recientes para los filtros seleccionados.
+                Las exportaciones no tienen este límite.
+            </p>
+        {% endif %}
+    {% else %}
+        <div class="research-empty">
+            <h3>No hay registros con estos filtros</h3>
+            <p>Modifica los filtros o espera nuevas evaluaciones.</p>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

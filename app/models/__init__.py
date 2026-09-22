@@ -1,0 +1,38 @@
+"""Registro central de modelos SQLAlchemy.
+
+Importar los modelos desde este módulo garantiza que Flask-Migrate/Alembic
+pueda descubrir todas las tablas cuando genere migraciones.
+"""
+
+from .assessment import (
+    Activity,
+    AssessmentSession,
+    DataQualityReview,
+    SessionActivity,
+    SessionSubject,
+    Subject,
+)
+from .instrument import Instrument, InstrumentVersion, InterestItem, ONetItem
+from .participant import ConsentRecord, Participant
+from .responses import InterestResponse, ONetResponse, OpenResponse
+from .riasec import RiasecDimension, RiasecResult
+
+__all__ = [
+    "Activity",
+    "AssessmentSession",
+    "ConsentRecord",
+    "DataQualityReview",
+    "Instrument",
+    "InstrumentVersion",
+    "InterestItem",
+    "InterestResponse",
+    "ONetItem",
+    "ONetResponse",
+    "OpenResponse",
+    "Participant",
+    "RiasecDimension",
+    "RiasecResult",
+    "SessionActivity",
+    "SessionSubject",
+    "Subject",
+]

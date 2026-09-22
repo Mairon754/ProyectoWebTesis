@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Gustos actuales | Plataforma RIASEC{% endblock %}
+{% block main_class %}page-shell page-shell--reading{% endblock %}
+
+{% block content %}
+{% if assessment %}
+<section class="stage-header" aria-labelledby="interests-title">
+    <span class="stage-kicker">Paso 4 · Gustos actuales</span>
+    <h1 id="interests-title">Cuéntanos un poco más sobre ti</h1>
+    <p class="lead">
+        Estas respuestas complementan la evaluación. No se suman directamente
+        al puntaje RIASEC y se conservan como información adicional del estudio.
+    </p>
+</section>
+
+<form method="post">
+    <section class="section-block" aria-labelledby="g-title">
+        <div class="section-heading">
+            <p class="eyebrow">Parte 1</p>
+            <h2 id="g-title">Actividades que te interesan</h2>
+            <p class="muted">Elige cuánto te identifica cada actividad.</p>
+        </div>
+
+        {% for item in catalogs.interests %}
+        <fieldset class="interest-fieldset">
+            <legend>{{ item.code }}. {{ item.text }}</legend>
+            <div class="interest-scale">
+                {% for option in catalogs.interest_answer_options %}
+                <label class="choice-card">
+                    <input
+                        type="radio"
+                        name="{{ item.code }}"
+                        value="{{ option.value }}"
+                        required
+                        {% if state.get('interest_values', {}).get(item.code)|string == option.value|string %}checked{% endif %}
+                    >
+                    <span class="choice-card__text">
+                        {{ option.name }}
+                        <span class="choice-card__meta">{{ option.value }} de 5</span>
+                    </span>
+                </label>
+                {% endfor %}
+            </div>
+        </fieldset>
+        {% endfor %}
+    </section>
+
+    <section class="selection-section" aria-labelledby="subjects-title">
+        <p class="eyebrow">Parte 2</p>
+        <h2 id="subjects-title">Materias favoritas</h2>
+        <p class="muted">Selecciona entre 1 y 3.</p>
+
+        <div class="choice-grid choice-grid--two">
+            {% for subject in catalogs.subjects %}
+            <label class="checkbox-card">
+                <input
+                    type="checkbox"
+                    name="subject_codes"
+                    value="{{ subject.code }}"
+                    {% if subject.code in state.get('subject_codes', []) %}checked{% endif %}
+                >
+                <span class="checkbox-card__text">{{ subject.name }}</span>
+            </label>
+            {% endfor %}
+        </div>
+
+        <div class="form-group section-block">
+            <label for="subject_other">Si elegiste “Otra”, indica cuál</label>
+            <input
+                type="text"
+                id="subject_other"
+                name="subject_other"
+                maxlength="150"
+                value="{{ state.get('subject_other', '') }}"
+            >
+        </div>
+    </section>
+
+    <section class="selection-section" aria-labelledby="activities-title">
+        <p class="eyebrow">Parte 3</p>
+        <h2 id="activities-title">Actividades que realizas o disfrutas</h2>
+        <p class="muted">Selecciona una o varias. “Ninguna” no puede combinarse con otras.</p>
+
+        <div class="choice-grid choice-grid--two">
+            {% for activity in catalogs.activities %}
+            <label class="checkbox-card">
+                <input
+                    type="checkbox"
+                    name="activity_codes"
+                    value="{{ activity.code }}"
+                    {% if activity.code in state.get('activity_codes', []) %}checked{% endif %}
+                >
+                <span class="checkbox-card__text">{{ activity.name }}</span>
+            </label>
+            {% endfor %}
+        </div>
+
+        <div class="form-group section-block">
+            <label for="activity_other">Si elegiste “Otra”, descríbela</label>
+            <input
+                type="text"
+                id="activity_other"
+                name="activity_other"
+                maxlength="180"
+                value="{{ state.get('activity_other', '') }}"
+            >
+        </div>
+    </section>
+
+    <div class="form-actions section-block">
+        <a
+            class="button button--secondary"
+            href="{{ url_for('assessment.assessment_page', session_id=assessment.id, q=60) }}"
+        >
+            Volver a O*NET
+        </a>
+        <button type="submit">Continuar</button>
+    </div>
+</form>
+{% else %}
+<section class="card card--padded">
+    <h1>No es posible mostrar esta etapa</h1>
+    <p class="muted">La evaluación solicitada no está disponible.</p>
+</section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block title %}Resultado RIASEC | Plataforma RIASEC{% endblock %}
+
+{% block content %}
+{% if result %}
+<section class="result-dashboard" aria-labelledby="result-title">
+    <div class="result-dashboard__intro">
+        <div>
+            <p class="eyebrow">Evaluación completada</p>
+            <h1 id="result-title">Tu perfil vocacional</h1>
+            <p class="lead">{{ result.profile_summary }}</p>
+            <p class="muted">
+                Código de participante:
+                <strong>{{ result.participant_code }}</strong>
+            </p>
+        </div>
+
+        <aside class="result-code-panel" aria-labelledby="code-title">
+            <p class="result-code-panel__label" id="code-title">Código RIASEC</p>
+            {% if result.holland_code %}
+                <div class="result-code-letters" aria-label="Código RIASEC {{ result.holland_code }}">
+                    {% for code in result.holland_code %}
+                    <span class="result-code-letter result-code-letter--{{ code|lower }}">{{ code }}</span>
+                    {% endfor %}
+                </div>
+                <strong class="result-code-panel__value">{{ result.holland_code }}</strong>
+            {% elif result.tie_top1 %}
+                <div class="result-code-letters" aria-label="Empate principal RIASEC">
+                    {% for code in result.top1_candidates %}
+                    <span class="result-code-letter result-code-letter--{{ code|lower }}">{{ code }}</span>
+                    {% endfor %}
+                </div>
+                <strong class="result-code-panel__value">Empate principal</strong>
+            {% else %}
+                <strong class="result-code-panel__value">Sin código único</strong>
+            {% endif %}
+            <p>{{ result.code_explanation }}</p>
+        </aside>
+    </div>
+</section>
+
+<section class="section-block" aria-labelledby="chart-title">
+    <div class="section-heading section-heading--split">
+        <div>
+            <p class="eyebrow">Vista general</p>
+            <h2 id="chart-title">Gráfico de tu perfil</h2>
+        </div>
+        <p class="muted result-scale-note">Escala por dimensión: 0 a 40 puntos.</p>
+    </div>
+
+    <div class="profile-chart" aria-labelledby="chart-title">
+        {% for dimension in result.dimensions %}
+        <div class="profile-chart__row profile-chart__row--{{ dimension.code|lower }}">
+            <div class="profile-chart__label">
+                <span class="profile-chart__code">{{ dimension.code }}</span>
+                <span>
+                    <strong>{{ dimension.name }}</strong>
+                    <small>Puesto {{ dimension.rank }}</small>
+                </span>
+            </div>
+            <div class="profile-chart__track" aria-hidden="true">
+                <span
+                    class="profile-chart__fill"
+                    style="width: {{ dimension.percentage }}%;"
+                ></span>
+            </div>
+            <div class="profile-chart__value">
+                <strong>{{ dimension.percentage }}%</strong>
+                <span>{{ dimension.score }}/40</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="section-block" aria-labelledby="primary-title">
+    <div class="section-heading">
+        <p class="eyebrow">Lo que más destaca</p>
+        <h2 id="primary-title">Dimensiones principales</h2>
+        <p class="muted">
+            Si existe un empate en el límite de las primeras posiciones, se muestran todas las áreas empatadas.
+        </p>
+    </div>
+
+    <div class="primary-dimensions">
+        {% for dimension in result.primary_dimensions %}
+        <article class="primary-card primary-card--{{ dimension.code|lower }}">
+            <div class="primary-card__topline">
+                <span class="primary-card__badge">{{ dimension.code }}</span>
+                <span class="primary-card__score">{{ dimension.percentage }}%</span>
+            </div>
+            <h3>{{ dimension.name }}</h3>
+            <p class="primary-card__tagline">{{ dimension.tagline }}</p>
+            <p>{{ dimension.description }}</p>
+
+            <div class="primary-card__columns">
+                <div>
+                    <h4>Rasgos de interés asociados</h4>
+                    <ul class="result-list">
+                        {% for strength in dimension.strengths %}
+                        <li>{{ strength }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div>
+                    <h4>Ámbitos que podrías explorar</h4>
+                    <ul class="result-list">
+                        {% for interest in dimension.interests %}
+                        <li>{{ interest }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="section-block" aria-labelledby="ranking-title">
+    <div class="section-heading">
+        <p class="eyebrow">Detalle completo</p>
+        <h2 id="ranking-title">Las seis dimensiones ordenadas</h2>
+    </div>
+
+    <div class="dimension-grid dimension-grid--ranking">
+        {% for dimension in result.ranking %}
+        <article class="dimension-card dimension-card--{{ dimension.code|lower }}">
+            <div class="dimension-card__header">
+                <div class="dimension-card__identity">
+                    <span class="dimension-card__code" aria-hidden="true">{{ dimension.code }}</span>
+                    <div>
+                        <span class="dimension-card__rank">Puesto {{ dimension.rank }}</span>
+                        <h3>{{ dimension.name }}</h3>
+                    </div>
+                </div>
+                <strong>{{ dimension.percentage }}%</strong>
+            </div>
+            <progress
+                max="100"
+                value="{{ dimension.percentage }}"
+                aria-label="{{ dimension.name }}: {{ dimension.percentage }} por ciento"
+            >
+                {{ dimension.percentage }}%
+            </progress>
+            <p class="muted">{{ dimension.score }} de 40 puntos.</p>
+            <p>{{ dimension.description }}</p>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="result-guidance section-block" aria-labelledby="guidance-title">
+    <div class="result-guidance__icon" aria-hidden="true">i</div>
+    <div>
+        <h2 id="guidance-title">¿Cómo usar este resultado?</h2>
+        <p>{{ result.disclaimer }}</p>
+        <p>
+            Úsalo como punto de partida para conversar con docentes, orientación escolar o tu familia, y para investigar programas académicos y ocupaciones relacionadas con las áreas que más te interesan.
+        </p>
+        <p class="muted">
+            Versión de puntuación: <strong>{{ result.scoring_version }}</strong>.
+        </p>
+    </div>
+</section>
+
+<div class="result-actions section-block">
+    <a class="button button--secondary" href="#chart-title">Revisar gráfico</a>
+    <a class="button" href="{{ url_for('main.index') }}">Finalizar y volver al inicio</a>
+</div>
+{% else %}
+<section class="card card--padded">
+    <h1>No existe un resultado disponible</h1>
+    {% if error %}
+    <p class="notice notice--error">{{ error }}</p>
+    {% else %}
+    <p class="muted">La evaluación solicitada no tiene un resultado RIASEC disponible.</p>
+    {% endif %}
+    <a class="button" href="{{ url_for('main.index') }}">Volver al inicio</a>
+</section>
+{% endif %}
+{% endblock %}

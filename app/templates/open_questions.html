@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Preguntas abiertas | Plataforma RIASEC{% endblock %}
+{% block main_class %}page-shell page-shell--reading{% endblock %}
+
+{% block content %}
+{% if assessment %}
+<section class="stage-header" aria-labelledby="open-title">
+    <span class="stage-kicker">Paso 5 · Tu experiencia</span>
+    <h1 id="open-title">Ahora, cuéntanos con tus propias palabras</h1>
+    <p class="lead">
+        T01 y T02 son obligatorias. T03 es opcional. En las dos primeras intenta
+        escribir aproximadamente entre 30 y 150 palabras cuando sea posible.
+    </p>
+</section>
+
+<form method="post">
+    <div class="text-response">
+        <label for="T01">
+            <span class="text-response__number" aria-hidden="true">T01</span>
+            {{ prompts.T01 }}
+        </label>
+        <textarea
+            id="T01"
+            name="T01"
+            rows="7"
+            required
+            aria-describedby="T01-hint"
+        >{{ values.get('T01', '') }}</textarea>
+        <p id="T01-hint" class="field-hint">Obligatoria · Recomendación: 30 a 150 palabras.</p>
+    </div>
+
+    <div class="text-response">
+        <label for="T02">
+            <span class="text-response__number" aria-hidden="true">T02</span>
+            {{ prompts.T02 }}
+        </label>
+        <textarea
+            id="T02"
+            name="T02"
+            rows="7"
+            required
+            aria-describedby="T02-hint"
+        >{{ values.get('T02', '') }}</textarea>
+        <p id="T02-hint" class="field-hint">Obligatoria · Recomendación: 30 a 150 palabras.</p>
+    </div>
+
+    <div class="text-response">
+        <label for="T03">
+            <span class="text-response__number" aria-hidden="true">T03</span>
+            {{ prompts.T03 }} <span class="muted">(opcional)</span>
+        </label>
+        <textarea id="T03" name="T03" rows="7">{{ values.get('T03', '') }}</textarea>
+        <p class="field-hint">Opcional · Escribe lo que imaginas con tus propias palabras.</p>
+    </div>
+
+    <div class="form-actions section-block">
+        <a
+            class="button button--secondary"
+            href="{{ url_for('assessment.interests_page', session_id=assessment.id) }}"
+        >
+            Volver a gustos actuales
+        </a>
+        <button type="submit">Finalizar y ver mi resultado</button>
+    </div>
+</form>
+{% else %}
+<section class="card card--padded">
+    <h1>No es posible mostrar las preguntas abiertas</h1>
+    <p class="muted">La evaluación solicitada no está disponible.</p>
+</section>
+{% endif %}
+{% endblock %}

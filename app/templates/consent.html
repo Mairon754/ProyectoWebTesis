@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}Consentimiento informado | Plataforma RIASEC{% endblock %}
+{% block main_class %}page-shell page-shell--reading{% endblock %}
+
+{% block content %}
+<section class="stage-header" aria-labelledby="consent-title">
+    <span class="stage-kicker">Paso 1 · Consentimiento informado</span>
+    <h1 id="consent-title">Consentimiento informado y autorización</h1>
+    <p class="lead">
+        Lee esta información antes de decidir si deseas participar en la prueba piloto.
+    </p>
+</section>
+
+<section
+    class="card card--padded legal-consent"
+    aria-labelledby="legal-basis-title"
+>
+    <div class="legal-consent__heading">
+        <span class="legal-consent__badge" aria-hidden="true">§</span>
+        <div>
+            <p class="legal-consent__eyebrow">Información del estudio</p>
+            <h2 id="legal-basis-title">Fundamento ético y protección de datos</h2>
+        </div>
+    </div>
+
+    <div class="legal-consent__text">
+        <p>
+            El presente estudio se fundamenta en los principios éticos y morales
+            del código deontológico y bioético de la Ley 1090 del 2006, la cual
+            regula el ejercicio dentro de la profesión de psicología.
+        </p>
+        <p>
+            La participación será totalmente voluntaria y podrá retirarse en
+            cualquier momento sin encontrarse con ninguna sanción. Los datos
+            personales serán protegidos conforme a la Ley 1581 de 2012, el
+            Decreto 1377 de 2013 y el Decreto 1081 de 2015.
+        </p>
+        <p>
+            En caso de dudas, explicaciones adicionales o inconformidades,
+            podrán presentarlas oportunamente con los investigadores
+            <strong>Mairon Andres Cuabu</strong> y
+            <strong>Frank Manuell Cortes Carreño</strong>.
+        </p>
+    </div>
+
+    <div class="researcher-contact" aria-label="Contacto de los investigadores">
+        <a href="mailto:maironadres836@udenar.edu.co">
+            maironadres836@udenar.edu.co
+        </a>
+        <a href="mailto:fmcortes21@udenar.edu.co">
+            fmcortes21@udenar.edu.co
+        </a>
+    </div>
+</section>
+
+<section
+    class="card card--padded section-block"
+    aria-labelledby="authorization-title"
+>
+    <h2 id="authorization-title">Autorización para uso académico</h2>
+    <p>
+        <strong>Autorizo:</strong> Que los investigadores Mairon Andres Cuabu y
+        Frank Manuell Cortes Carreño utilicen los datos de esta encuesta con
+        fines académicos presentados en la prueba piloto de la presente
+        investigación.
+    </p>
+
+    <div class="notice notice--info">
+        La plataforma registra la aceptación digital junto con la versión del
+        consentimiento y la fecha/hora de aceptación. Puedes decidir no
+        continuar antes de iniciar la evaluación.
+    </div>
+</section>
+
+<form method="post" id="consent-form" class="card form-card">
+    <fieldset>
+        <legend>Confirma tu decisión para continuar</legend>
+        <p class="field-hint">
+            Las tres confirmaciones son necesarias para iniciar la prueba piloto.
+        </p>
+
+        <div class="consent-list">
+            <label class="checkbox-card">
+                <input
+                    type="checkbox"
+                    name="understood"
+                    id="understood"
+                    {% if understood %}checked{% endif %}
+                >
+                <span class="checkbox-card__text">
+                    He leído y comprendido la información del consentimiento informado.
+                </span>
+            </label>
+
+            <label class="checkbox-card">
+                <input
+                    type="checkbox"
+                    name="voluntary"
+                    id="voluntary"
+                    {% if voluntary %}checked{% endif %}
+                >
+                <span class="checkbox-card__text">
+                    Acepto participar voluntariamente y comprendo que puedo retirarme.
+                </span>
+            </label>
+
+            <label class="checkbox-card">
+                <input
+                    type="checkbox"
+                    name="data_authorization"
+                    id="data-authorization"
+                    {% if data_authorization %}checked{% endif %}
+                >
+                <span class="checkbox-card__text">
+                    Autorizo el uso de los datos de esta encuesta con fines académicos
+                    en la prueba piloto de la presente investigación.
+                </span>
+            </label>
+        </div>
+    </fieldset>
+
+    <div class="form-actions section-block">
+        <a class="button button--secondary" href="{{ url_for('main.index') }}">
+            Volver
+        </a>
+        <button type="submit" id="continue-button" disabled>
+            Aceptar y continuar
+        </button>
+    </div>
+</form>
+
+<section class="legal-review-note" aria-label="Nota del consentimiento">
+    <p>
+        Este consentimiento corresponde a la versión legal mostrada en esta
+        pantalla y debe mantenerse sin cambios durante una misma aplicación de
+        la prueba piloto.
+    </p>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    const understood = document.getElementById("understood");
+    const voluntary = document.getElementById("voluntary");
+    const dataAuthorization = document.getElementById("data-authorization");
+    const button = document.getElementById("continue-button");
+
+    function updateButton() {
+        button.disabled = !(
+            understood.checked
+            && voluntary.checked
+            && dataAuthorization.checked
+        );
+    }
+
+    understood.addEventListener("change", updateButton);
+    voluntary.addEventListener("change", updateButton);
+    dataAuthorization.addEventListener("change", updateButton);
+    updateButton();
+}());
+</script>
+{% endblock %}

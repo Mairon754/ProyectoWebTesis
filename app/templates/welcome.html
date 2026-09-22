@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Bienvenida | Plataforma RIASEC{% endblock %}
+
+{% block content %}
+<section class="hero" aria-labelledby="welcome-title">
+    <div class="hero__content">
+        <p class="eyebrow">Orientación vocacional</p>
+        <h1 id="welcome-title">Descubre qué actividades conectan contigo.</h1>
+        <p class="lead">
+            Esta evaluación explora tus intereses y organiza el resultado en las
+            seis dimensiones del modelo RIASEC para ayudarte a reflexionar sobre
+            opciones académicas y ocupacionales.
+        </p>
+
+        <div class="hero__actions">
+            <a class="button" href="{{ url_for('main.consent') }}">
+                Comenzar evaluación
+            </a>
+            <a class="button button--secondary" href="#antes-de-comenzar">
+                Conocer más
+            </a>
+        </div>
+    </div>
+
+    <div class="hero__visual" aria-hidden="true">
+        <div class="hero-compass">
+            <div class="hero-compass__core">RIASEC</div>
+            <span class="hero-compass__tag hero-compass__tag--r">R · Realista</span>
+            <span class="hero-compass__tag hero-compass__tag--i">I · Investigador</span>
+            <span class="hero-compass__tag hero-compass__tag--a">A · Artístico</span>
+            <span class="hero-compass__tag hero-compass__tag--s">S · Social</span>
+            <span class="hero-compass__tag hero-compass__tag--e">E · Emprendedor</span>
+            <span class="hero-compass__tag hero-compass__tag--c">C · Convencional</span>
+        </div>
+    </div>
+</section>
+
+<section id="antes-de-comenzar" class="section-block" aria-labelledby="about-title">
+    <div class="section-heading">
+        <p class="eyebrow">Antes de comenzar</p>
+        <h2 id="about-title">Un recorrido simple, sin respuestas buenas o malas</h2>
+    </div>
+
+    <dl class="info-grid">
+        <div class="card info-card">
+            <div class="info-card__icon" aria-hidden="true">01</div>
+            <dt>¿Qué es esta evaluación?</dt>
+            <dd>
+                Es un recorrido de intereses vocacionales. Responde de acuerdo
+                con lo que realmente te gusta, no con lo que crees que deberías elegir.
+            </dd>
+        </div>
+
+        <div class="card info-card">
+            <div class="info-card__icon" aria-hidden="true">20–30</div>
+            <dt>¿Cuánto tiempo tarda?</dt>
+            <dd>
+                Aproximadamente entre 20 y 30 minutos, dependiendo de tu ritmo de respuesta.
+            </dd>
+        </div>
+
+        <div class="card info-card">
+            <div class="info-card__icon" aria-hidden="true">?</div>
+            <dt>¿Qué preguntas encontrarás?</dt>
+            <dd>
+                Actividades O*NET, gustos actuales, materias, actividades y algunas
+                preguntas abiertas sobre tus experiencias.
+            </dd>
+        </div>
+
+        <div class="card info-card">
+            <div class="info-card__icon" aria-hidden="true">ID</div>
+            <dt>¿Qué pasa con tus respuestas?</dt>
+            <dd>
+                Se asocian a un código anónimo para calcular tu perfil y apoyar el
+                análisis autorizado del estudio.
+            </dd>
+        </div>
+    </dl>
+</section>
+
+<details class="details-card">
+    <summary>¿Qué significa RIASEC?</summary>
+    <div class="details-card__body">
+        <p>
+            RIASEC agrupa intereses en seis áreas: Realista, Investigador,
+            Artístico, Social, Emprendedor y Convencional. El resultado orienta
+            la reflexión vocacional, pero no reemplaza una decisión personal ni
+            la orientación profesional.
+        </p>
+    </div>
+</details>
+{% endblock %}

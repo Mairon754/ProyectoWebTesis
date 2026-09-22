@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+
+{% block title %}Evaluación de intereses | Plataforma RIASEC{% endblock %}
+{% block styles %}
+<link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/assessment.css') }}"
+>
+{% endblock %}
+{% block main_class %}assessment-page{% endblock %}
+
+{% block header_extra %}
+{% if assessment and question %}
+<span class="pill">O*NET · {{ question.index }}/60</span>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+{% if assessment and question %}
+<section
+    class="assessment-experience"
+    data-assessment-experience
+    data-current-index="{{ question.index }}"
+    data-total-questions="60"
+    data-session-id="{{ assessment.id }}"
+    data-stage="onet"
+    data-assessment-status="{{ assessment.status }}"
+    data-response-url="{{ url_for('api.assessment_response') }}"
+    data-autosave-url="{{ url_for('api.assessment_autosave') }}"
+    data-has-previous="{{ 'true' if previous_index else 'false' }}"
+    aria-label="Pregunta {{ question.index }} de 60"
+>
+    <section class="assessment-topbar" aria-label="Progreso de la evaluación">
+        <div class="assessment-topbar__row">
+            <div>
+                <p class="assessment-topbar__eyebrow">Evaluación de intereses</p>
+                <p class="assessment-topbar__title">
+                    Pregunta {{ question.index }} de 60
+                </p>
+            </div>
+            <span class="assessment-topbar__count">
+                {{ progress.answered_items }} respondidas
+            </span>
+        </div>
+
+        <div class="progress-cluster">
+            <label class="visually-hidden" for="progress">
+                Progreso de respuestas guardadas
+            </label>
+            <progress
+                id="progress"
+                max="60"
+                value="{{ progress.answered_items }}"
+                aria-valuetext="{{ progress.answered_items }} de 60 preguntas respondidas"
+            >
+                {{ progress.percentage }}%
+            </progress>
+            <div class="progress-meta" aria-hidden="true">
+                <span>{{ progress.percentage }}% completado</span>
+                <span>{{ 60 - progress.answered_items }} pendientes</span>
+            </div>
+        </div>
+    </section>
+
+    <form
+        class="assessment-form"
+        method="post"
+        action="{{ url_for('assessment.answer_question', session_id=assessment.id) }}"
+        data-assessment-form
+    >
+        <input type="hidden" name="item_id" value="{{ question.id }}">
+        <input type="hidden" name="question_index" value="{{ question.index }}">
+        <input type="hidden" name="tts_used" value="false" data-tts-used>
+        <input
+            type="hidden"
+            name="response_time_ms"
+            value=""
+            data-response-time-ms
+        >
+        <input
+            type="hidden"
+            name="navigation_direction"
+            value="next"
+            data-navigation-direction
+        >
+
+        <fieldset
+            class="question-card"
+            data-swipe-surface
+            aria-describedby="gesture-instructions assessment-feedback"
+        >
+            <div class="question-card__content">
+                <div class="question-card__meta">
+                    <span class="pill">Pregunta {{ question.index }}</span>
+                    <span class="pill pill--soft">Selecciona una opción</span>
+                </div>
+
+                <legend
+                    class="question-card__legend"
+                    data-question-text
+                >{{ question.text }}</legend>
+
+                <section
+                    class="speech-tools"
+                    data-speech-controls
+                    aria-label="Lector de la pregunta"
+                >
+                    <div class="speech-tools__intro">
+                        <span class="speech-tools__icon" aria-hidden="true">🔊</span>
+                        <div>
+                            <p class="speech-tools__title">¿No entendiste bien la pregunta?</p>
+                            <p class="speech-tools__help">
+                                Presiona <strong>Escuchar pregunta</strong> y la plataforma
+                                leerá en voz alta el enunciado actual.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="speech-tools__actions">
+                        <button
+                            type="button"
+                            class="button speech-button speech-button--read"
+                            data-speech-read
+                            aria-label="Escuchar en voz alta la pregunta actual"
+                        >
+                            <span aria-hidden="true">🔊</span>
+                            Escuchar pregunta
+                        </button>
+                        <button
+                            type="button"
+                            class="button button--secondary speech-button"
+                            data-speech-pause
+                            disabled
+                        >
+                            <span aria-hidden="true">⏸</span> Pausar
+                        </button>
+                        <button
+                            type="button"
+                            class="button button--secondary speech-button"
+                            data-speech-resume
+                            disabled
+                        >
+                            <span aria-hidden="true">▶</span> Reanudar
+                        </button>
+                        <button
+                            type="button"
+                            class="button button--secondary speech-button"
+                            data-speech-stop
+                            disabled
+                        >
+                            <span aria-hidden="true">⏹</span> Detener
+                        </button>
+                    </div>
+                    <p
+                        class="speech-tools__status"
+                        data-speech-status
+                        aria-live="polite"
+                        aria-atomic="true"
+                    >
+                        Lector listo. Puedes escuchar esta pregunta cuando lo necesites.
+                    </p>
+                </section>
+
+                <div class="answer-grid" data-answer-grid>
+                    {% for value, label in answer_options %}
+                    <label class="answer-option" data-answer-option>
+                        <input
+                            type="radio"
+                            name="response_raw"
+                            value="{{ value }}"
+                            required
+                            data-answer-input
+                            {% if selected_value == value %}checked{% endif %}
+                        >
+                        <span class="answer-option__number" aria-hidden="true">
+                            {{ value }}
+                        </span>
+                        <span class="answer-option__label">{{ label }}</span>
+                        <span class="answer-option__state" aria-hidden="true">✓</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="gesture-guide" id="gesture-instructions">
+                <span class="gesture-guide__icon" aria-hidden="true">↑</span>
+                <span class="gesture-guide__touch">
+                    Desliza hacia arriba para continuar y hacia abajo para volver.
+                </span>
+                <span class="gesture-guide__desktop">
+                    Arrastra verticalmente, usa los botones o las teclas Re Pág / Av Pág.
+                </span>
+            </div>
+        </fieldset>
+
+        <div
+            class="autosave-status"
+            data-autosave-status
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+        >
+            <span class="autosave-status__dot" aria-hidden="true"></span>
+            <span data-autosave-message>Preparando guardado automático…</span>
+        </div>
+
+        <p
+            class="assessment-feedback"
+            id="assessment-feedback"
+            data-assessment-feedback
+            aria-live="polite"
+            aria-atomic="true"
+        >
+            {% if selected_value %}
+                Hay una respuesta guardada para esta pregunta. Puedes cambiarla o continuar.
+            {% else %}
+                Selecciona la opción que mejor represente cuánto te gustaría realizar esta actividad.
+            {% endif %}
+        </p>
+
+        <nav class="question-actions" aria-label="Navegación entre preguntas">
+            {% if previous_index %}
+                <a
+                    class="button button--secondary"
+                    href="{{ url_for('assessment.assessment_page', session_id=assessment.id, q=previous_index) }}"
+                    data-action-previous
+                >
+                    <span aria-hidden="true">↓</span>
+                    Anterior
+                </a>
+            {% else %}
+                <span class="question-actions__placeholder" aria-hidden="true"></span>
+            {% endif %}
+
+            <button type="submit" data-action-next>
+                {% if question.index == 60 %}
+                    Guardar y continuar
+                {% else %}
+                    Guardar y siguiente
+                    <span aria-hidden="true">↑</span>
+                {% endif %}
+            </button>
+        </nav>
+    </form>
+</section>
+{% else %}
+<section class="assessment-empty card card--padded">
+    <h1>No es posible mostrar la evaluación</h1>
+    <p class="muted">La sesión o la pregunta solicitada no está disponible.</p>
+    <a class="button" href="{{ url_for('main.index') }}">Volver al inicio</a>
+</section>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if assessment and question %}
+<script
+    src="{{ url_for('static', filename='js/assessment.js') }}"
+    defer
+></script>
+<script
+    src="{{ url_for('static', filename='js/swipe.js') }}"
+    defer
+></script>
+<script
+    src="{{ url_for('static', filename='js/speech.js') }}"
+    defer
+></script>
+<script
+    src="{{ url_for('static', filename='js/autosave.js') }}"
+    defer
+></script>
+{% endif %}
+{% endblock %}

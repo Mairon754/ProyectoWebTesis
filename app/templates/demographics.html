@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Datos generales | Plataforma RIASEC{% endblock %}
+{% block main_class %}page-shell page-shell--reading{% endblock %}
+
+{% block content %}
+<section class="stage-header" aria-labelledby="demographics-title">
+    <span class="stage-kicker">Paso 2 · Contexto</span>
+    <h1 id="demographics-title">Datos generales</h1>
+    <p class="lead">
+        Solicitamos únicamente la información necesaria para contextualizar la evaluación.
+    </p>
+</section>
+
+<div class="notice notice--info">
+    No escribas nombres, números de documento ni datos de contacto personales.
+</div>
+
+<form method="post" class="card form-card">
+    <div class="form-grid form-grid--two">
+        <div class="form-group">
+            <label for="age">Edad</label>
+            <input
+                type="number"
+                id="age"
+                name="age"
+                min="14"
+                max="25"
+                inputmode="numeric"
+                autocomplete="off"
+                required
+                value="{{ form.get('age', '') }}"
+            >
+        </div>
+
+        <div class="form-group">
+            <label for="grade">Grado</label>
+            <select id="grade" name="grade" required>
+                <option value="">Selecciona</option>
+                <option value="10" {% if form.get('grade') == '10' %}selected{% endif %}>10°</option>
+                <option value="11" {% if form.get('grade') == '11' %}selected{% endif %}>11°</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="institution_code">Código o nombre institucional</label>
+            <input
+                type="text"
+                id="institution_code"
+                name="institution_code"
+                maxlength="30"
+                autocomplete="organization"
+                required
+                value="{{ form.get('institution_code', '') }}"
+            >
+            <p class="field-hint">Utiliza el identificador definido para el estudio.</p>
+        </div>
+
+        <div class="form-group">
+            <label for="municipality">Municipio</label>
+            <input
+                type="text"
+                id="municipality"
+                name="municipality"
+                maxlength="100"
+                autocomplete="address-level2"
+                required
+                value="{{ form.get('municipality', '') }}"
+            >
+        </div>
+    </div>
+
+    <fieldset class="selection-section">
+        <legend>Zona</legend>
+        <div class="choice-grid choice-grid--two">
+            <label class="choice-card">
+                <input
+                    type="radio"
+                    name="zone"
+                    value="urbana"
+                    required
+                    {% if form.get('zone') == 'urbana' %}checked{% endif %}
+                >
+                <span class="choice-card__text">Urbana</span>
+            </label>
+            <label class="choice-card">
+                <input
+                    type="radio"
+                    name="zone"
+                    value="rural"
+                    required
+                    {% if form.get('zone') == 'rural' %}checked{% endif %}
+                >
+                <span class="choice-card__text">Rural</span>
+            </label>
+        </div>
+    </fieldset>
+
+    <div class="form-grid form-grid--two section-block">
+        <div class="form-group">
+            <label for="gender_self_reported">Género <span class="muted">(opcional)</span></label>
+            <select id="gender_self_reported" name="gender_self_reported">
+                <option value="">Prefiero no indicarlo aquí</option>
+                <option value="mujer" {% if form.get('gender_self_reported') == 'mujer' %}selected{% endif %}>Mujer</option>
+                <option value="hombre" {% if form.get('gender_self_reported') == 'hombre' %}selected{% endif %}>Hombre</option>
+                <option value="no_binario" {% if form.get('gender_self_reported') == 'no_binario' %}selected{% endif %}>No binario</option>
+                <option value="otro" {% if form.get('gender_self_reported') == 'otro' %}selected{% endif %}>Otro</option>
+                <option value="prefiero_no_responder" {% if form.get('gender_self_reported') == 'prefiero_no_responder' %}selected{% endif %}>Prefiero no responder</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="has_career_in_mind">¿Tienes alguna carrera u ocupación en mente?</label>
+            <select id="has_career_in_mind" name="has_career_in_mind" required>
+                <option value="">Selecciona</option>
+                <option value="si" {% if form.get('has_career_in_mind') == 'si' %}selected{% endif %}>Sí</option>
+                <option value="no" {% if form.get('has_career_in_mind') == 'no' %}selected{% endif %}>No</option>
+                <option value="no_estoy_seguro" {% if form.get('has_career_in_mind') == 'no_estoy_seguro' %}selected{% endif %}>No estoy seguro</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="form-group section-block">
+        <label for="career_in_mind_text">Si deseas, escribe cuál <span class="muted">(opcional)</span></label>
+        <input
+            type="text"
+            id="career_in_mind_text"
+            name="career_in_mind_text"
+            maxlength="160"
+            autocomplete="off"
+            value="{{ form.get('career_in_mind_text', '') }}"
+        >
+    </div>
+
+    <div class="form-actions section-block">
+        <a class="button button--secondary" href="{{ url_for('main.consent') }}">Volver</a>
+        <button type="submit">Iniciar preguntas</button>
+    </div>
+</form>
+{% endblock %}
