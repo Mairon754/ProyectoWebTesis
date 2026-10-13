@@ -15,6 +15,7 @@ import uuid
 
 from flask import (
     Blueprint,
+    abort,
     current_app,
     flash,
     redirect,
@@ -23,6 +24,10 @@ from flask import (
     url_for,
 )
 
+from app.services.access_service import (
+    AssessmentAccessError,
+    require_assessment_access,
+)
 from app.services.assessment_service import (
     AssessmentConflictError,
     AssessmentNotFoundError,
@@ -50,6 +55,20 @@ assessment_bp = Blueprint(
     __name__,
     url_prefix="/assessment",
 )
+
+
+@assessment_bp.before_request
+def require_owned_assessment():
+    """Impide acceder a una evaluación conociendo únicamente su UUID."""
+
+    session_id = (request.view_args or {}).get("session_id")
+    if session_id is None:
+        return None
+    try:
+        require_assessment_access(session_id)
+    except AssessmentAccessError:
+        abort(403, description="No autorizado para esta evaluación.")
+    return None
 
 ONET_ANSWER_OPTIONS = (
     (1, "Me disgusta mucho"),
