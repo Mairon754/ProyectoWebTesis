@@ -59,6 +59,7 @@ class BaseConfig:
                 "Investigador 1",
             ),
             "password_hash": os.getenv("RESEARCHER_1_PASSWORD_HASH", ""),
+            "role": os.getenv("RESEARCHER_1_ROLE", "data_manager").strip().lower(),
         },
         {
             "username": os.getenv("RESEARCHER_2_USERNAME", "investigador_2"),
@@ -67,6 +68,7 @@ class BaseConfig:
                 "Investigador 2",
             ),
             "password_hash": os.getenv("RESEARCHER_2_PASSWORD_HASH", ""),
+            "role": os.getenv("RESEARCHER_2_ROLE", "viewer").strip().lower(),
         },
     ]
 
@@ -176,6 +178,16 @@ def validate_config(config_name: str, config_class: type[BaseConfig]) -> None:
         and str(account.get("password_hash", "")).strip()
         and not _contains_placeholder(str(account.get("password_hash", "")))
     ]
+    invalid_roles = [
+        str(account.get("role", "")).strip().lower()
+        for account in configured_accounts
+        if str(account.get("role", "")).strip().lower()
+        not in {"viewer", "data_manager"}
+    ]
+    if invalid_roles:
+        raise RuntimeError(
+            "RESEARCHER_*_ROLE debe ser 'viewer' o 'data_manager'."
+        )
     if not configured_accounts:
         raise RuntimeError(
             "Producción requiere al menos una cuenta investigadora con hash "
