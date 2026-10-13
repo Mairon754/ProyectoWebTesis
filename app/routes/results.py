@@ -11,8 +11,12 @@ from __future__ import annotations
 
 import uuid
 
-from flask import Blueprint, redirect, render_template, url_for
+from flask import Blueprint, abort, redirect, render_template, request, url_for
 
+from app.services.access_service import (
+    AssessmentAccessError,
+    require_assessment_access,
+)
 from app.services.assessment_service import (
     AssessmentNotFoundError,
     get_assessment,
@@ -24,6 +28,20 @@ results_bp = Blueprint(
     __name__,
     url_prefix="/results",
 )
+
+
+@results_bp.before_request
+def require_owned_result():
+    """Protege resultados frente a acceso por UUID adivinado o compartido."""
+
+    session_id = (request.view_args or {}).get("session_id")
+    if session_id is None:
+        return None
+    try:
+        require_assessment_access(session_id)
+    except AssessmentAccessError:
+        abort(403, description="No autorizado para este resultado.")
+    return None
 
 
 def _result_view_model(assessment) -> dict[str, object] | None:
