@@ -65,6 +65,10 @@ class DatasetRelease(db.Model):
             "train_ratio > 0 AND validation_ratio > 0 AND test_ratio > 0",
             name="ck_dataset_releases_ratios_positive",
         ),
+        db.CheckConstraint(
+            "train_ratio + validation_ratio + test_ratio = 1",
+            name="ck_dataset_releases_ratios_sum_one",
+        ),
     )
 
 
