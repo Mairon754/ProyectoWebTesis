@@ -11,7 +11,9 @@
 
 {% block header_extra %}
 <div class="research-user" aria-label="Sesión de investigador">
-    <span class="research-user__name">{{ researcher.display_name }}</span>
+    <span class="research-user__name">
+        {{ researcher.display_name }} · {{ researcher.role }}
+    </span>
     <form method="post" action="{{ url_for('research.logout') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <button class="button button--ghost button--compact" type="submit">
@@ -180,6 +182,7 @@
             'quality': 'Completitud, tiempos, uso del lector, cambios de respuesta y decisión de inclusión/exclusión.'
         } %}
         {% for kind in dataset_kinds %}
+            {% set sensitive_dataset = kind in ['master', 'quality'] %}
             {% set csv_url = url_for('research.export_dataset', kind=kind, file_format='csv') %}
             {% set xlsx_url = url_for('research.export_dataset', kind=kind, file_format='xlsx') %}
             <article class="dataset-card">
@@ -187,6 +190,7 @@
                 <h3>{{ dataset_labels[kind] }}</h3>
                 <p>{{ descriptions[kind] }}</p>
                 <div class="dataset-card__actions">
+                    {% if not sensitive_dataset or researcher.role == 'data_manager' %}
                     <a
                         class="button button--ghost"
                         href="{{ csv_url }}{% if export_query %}?{{ export_query }}{% endif %}"
@@ -195,6 +199,9 @@
                         class="button button--primary"
                         href="{{ xlsx_url }}{% if export_query %}?{{ export_query }}{% endif %}"
                     >Excel</a>
+                    {% else %}
+                    <span class="muted">Requiere rol data_manager.</span>
+                    {% endif %}
                 </div>
             </article>
         {% endfor %}
@@ -260,7 +267,7 @@
                                 {% endif %}
                             </td>
                             <td>
-                                {% if assessment.status == 'completed' %}
+                                {% if assessment.status == 'completed' and researcher.role == 'data_manager' %}
                                 <form
                                     method="post"
                                     action="{{ url_for('research.update_quality', session_id=assessment.id) }}"
@@ -308,6 +315,11 @@
                                         Guardar revisión
                                     </button>
                                 </form>
+                                {% elif assessment.status == 'completed' %}
+                                    <span class="muted">
+                                        {{ review.quality_status if review else 'pending' }}
+                                        · revisión solo para data_manager
+                                    </span>
                                 {% else %}
                                     <span class="muted">Disponible al completar la evaluación.</span>
                                 {% endif %}
