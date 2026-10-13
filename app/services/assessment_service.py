@@ -41,6 +41,7 @@ from app.services.riasec_service import (
     RiasecScoringError,
     calculate_session_result,
 )
+from app.services.riasec_protocol import INSTRUMENT_VERIFICATION_VERIFIED
 
 DEFAULT_INSTRUMENT_VERSION = "IP_ES_60_V1"
 CURRENT_CONSENT_VERSION = "CONS_V2_LEGAL_2026"
@@ -372,6 +373,16 @@ def create_assessment(
     try:
         participant = _get_or_create_participant(participant_code)
         instrument_version = _get_instrument_version(instrument_version_code)
+
+        if (
+            collection_phase == "final"
+            and instrument_version.verification_status
+            != INSTRUMENT_VERIFICATION_VERIFIED
+        ):
+            raise AssessmentConflictError(
+                "La recolección final está bloqueada porque la versión RIASEC "
+                "aún no cuenta con verificación científica documentada."
+            )
 
         consent = ConsentRecord(
             participant_id=participant.id,
