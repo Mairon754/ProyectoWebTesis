@@ -232,3 +232,48 @@ def test_final_collection_rejects_unauthorized_institution(
     finally:
         app.config["COLLECTION_PHASE"] = previous_phase
         app.config["AUTHORIZED_INSTITUTION_CODES"] = previous_codes
+
+
+
+def test_guardian_reference_rejects_personal_text(db_context, demographics):
+    from app.services.assessment_service import (
+        CURRENT_CONSENT_VERSION,
+        create_assessment,
+    )
+
+    with pytest.raises(
+        AssessmentValidationError,
+        match="solo letras, números, guion o guion bajo",
+    ):
+        create_assessment(
+            demographics=demographics,
+            consent_version=CURRENT_CONSENT_VERSION,
+            consent_accepted=True,
+            assent_accepted=True,
+            guardian_consent_required=True,
+            guardian_consent_reference="Nombre Apellido 123",
+            collection_method="institutional",
+        )
+
+
+def test_adult_does_not_require_guardian_reference(db_context, demographics):
+    from app.services.assessment_service import (
+        CURRENT_CONSENT_VERSION,
+        create_assessment,
+    )
+
+    adult = dict(demographics)
+    adult["age"] = 18
+
+    assessment = create_assessment(
+        demographics=adult,
+        consent_version=CURRENT_CONSENT_VERSION,
+        consent_accepted=True,
+        assent_accepted=None,
+        guardian_consent_required=False,
+        guardian_consent_reference=None,
+        collection_method="digital",
+    )
+
+    assert assessment.consent_record.guardian_consent_required is False
+    assert assessment.consent_record.guardian_consent_reference is None
