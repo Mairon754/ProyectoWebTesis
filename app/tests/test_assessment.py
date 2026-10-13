@@ -277,3 +277,62 @@ def test_adult_does_not_require_guardian_reference(db_context, demographics):
 
     assert assessment.consent_record.guardian_consent_required is False
     assert assessment.consent_record.guardian_consent_reference is None
+
+
+
+def test_final_collection_is_blocked_until_instrument_is_verified(
+    app,
+    db_context,
+    demographics,
+):
+    from app.services.assessment_service import (
+        CURRENT_CONSENT_VERSION,
+        AssessmentConflictError,
+        create_assessment,
+    )
+
+    previous_phase = app.config.get("COLLECTION_PHASE")
+    previous_codes = app.config.get("AUTHORIZED_INSTITUTION_CODES")
+    app.config["COLLECTION_PHASE"] = "final"
+    app.config["AUTHORIZED_INSTITUTION_CODES"] = ("INST_TEST",)
+
+    try:
+        with pytest.raises(
+            AssessmentConflictError,
+            match="verificación científica documentada",
+        ):
+            create_assessment(
+                demographics=demographics,
+                consent_version=CURRENT_CONSENT_VERSION,
+                consent_accepted=True,
+                assent_accepted=True,
+                guardian_consent_required=True,
+                guardian_consent_reference="GUARD-TEST-005",
+                collection_method="institutional",
+            )
+    finally:
+        app.config["COLLECTION_PHASE"] = previous_phase
+        app.config["AUTHORIZED_INSTITUTION_CODES"] = previous_codes
+
+
+def test_seeded_instrument_has_local_hash_but_remains_unverified(
+    app,
+    db_context,
+):
+    from sqlalchemy import select
+
+    from app.extensions import db
+    from app.models import InstrumentVersion
+    from app.services.catalog_service import INSTRUMENT_VERSION_CODE
+    from app.services.riasec_protocol import SCORING_SPEC_SHA256
+
+    version = db.session.execute(
+        select(InstrumentVersion).where(
+            InstrumentVersion.code == INSTRUMENT_VERSION_CODE
+        )
+    ).scalar_one()
+
+    assert version.local_content_hash_sha256
+    assert len(version.local_content_hash_sha256) == 64
+    assert version.scoring_spec_sha256 == SCORING_SPEC_SHA256
+    assert version.verification_status == "unverified"
