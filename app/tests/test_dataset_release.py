@@ -112,6 +112,8 @@ def test_pilot_release_freezes_records_splits_hashes_and_balance_report(
     assert len(records) == 5
     assert all("split" in row for row in records)
     assert all("session_id" not in row for row in records)
+    assert all("participant_code" not in row for row in records)
+    assert all(str(row["record_id"]).startswith("RID-") for row in records)
     assert all(
         not any(key.lower().startswith("ip") for key in row)
         for row in records
