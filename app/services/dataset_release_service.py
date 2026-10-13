@@ -11,6 +11,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import re
 from collections import Counter
 from decimal import Decimal, InvalidOperation
 from typing import Any, Iterable
@@ -293,8 +294,11 @@ def freeze_dataset_release(
     """Congela un release con registros, splits, esquema y hashes persistidos."""
 
     normalized_version = str(version).strip()
-    if not normalized_version or len(normalized_version) > 40:
-        raise DatasetReleaseError("version es obligatoria y admite hasta 40 caracteres.")
+    if not re.fullmatch(r"[A-Za-z0-9._-]{1,40}", normalized_version):
+        raise DatasetReleaseError(
+            "version solo admite letras, números, punto, guion y guion bajo "
+            "(máximo 40 caracteres)."
+        )
     if collection_phase not in {"pilot", "final"}:
         raise DatasetReleaseError("collection_phase debe ser pilot o final.")
     if db.session.execute(
