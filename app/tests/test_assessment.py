@@ -350,7 +350,7 @@ def test_csv_export_neutralizes_formula_like_text():
         [
             {
                 "participant_code": "RIA-TEST",
-                "t01_actividad_libre": "=HYPERLINK("http://example.test","x")",
+                "t01_actividad_libre": '=HYPERLINK("http://example.test","x")',
             }
         ]
     )
