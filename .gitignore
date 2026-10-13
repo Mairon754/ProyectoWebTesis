@@ -1,0 +1,39 @@
+# Variables y credenciales locales
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Testing / coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Entornos virtuales
+.venv/
+venv/
+env/
+
+# Datos locales
+instance/
+*.sqlite
+*.sqlite3
+*.log
+
+# IDE / SO
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Datos de investigación que no deben subirse
+data/raw/
+data/private/
+exports/
