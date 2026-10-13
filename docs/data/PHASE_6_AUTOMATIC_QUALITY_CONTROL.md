@@ -85,7 +85,7 @@ Un control automático aprobado no marca por sí mismo una sesión como válida 
 
 ## Estado stale
 
-Cada ejecución calcula un hash SHA-256 del contenido evaluado. Si después se modifica una respuesta o metadato estructural relevante, el hash actual deja de coincidir con el de la última ejecución.
+Cada ejecución calcula un hash SHA-256 del contenido evaluado. Si después se modifica una respuesta o metadato estructural relevante, incluido `collection_phase`, el hash actual deja de coincidir con el de la última ejecución.
 
 En ese caso:
 
@@ -137,3 +137,10 @@ La Fase 6 puede aprobarse técnicamente cuando:
 6. `included_ml=true` sea rechazado si el QC no está vigente y aprobado.
 
 La validación profesional/local pendiente de Fase 3 continúa siendo requisito para recolección y release definitivos.
+
+
+### Interacción con el release final
+
+Si una sesión previamente evaluada como `pilot` se modifica artificialmente a `final`, su control automático anterior pasa a `stale`. Al ejecutar nuevamente el protocolo, `final_instrument_verified` queda como bloqueador mientras la validación profesional/local no esté documentada.
+
+En consecuencia, el servicio de releases puede informar que no existen sesiones elegibles para `collection_phase=final`: esto es esperado porque la capa QC las excluye antes de la congelación. La causa científica queda trazada en `AutomaticQualityCheck.observations_json`.
