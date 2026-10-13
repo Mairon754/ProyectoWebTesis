@@ -189,6 +189,13 @@ class AssessmentSession(db.Model):
         cascade="all, delete-orphan",
         passive_deletes=True,
     )
+    automatic_quality_checks = db.relationship(
+        "AutomaticQualityCheck",
+        back_populates="assessment_session",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by="AutomaticQualityCheck.created_at",
+    )
 
     __table_args__ = (
         db.CheckConstraint(
