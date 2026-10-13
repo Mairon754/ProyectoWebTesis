@@ -332,7 +332,10 @@ def test_seeded_instrument_has_local_hash_but_remains_unverified(
         )
     ).scalar_one()
 
+    assert version.source_hash_sha256
     assert version.local_content_hash_sha256
     assert len(version.local_content_hash_sha256) == 64
+    assert version.source_hash_sha256 == version.local_content_hash_sha256
     assert version.scoring_spec_sha256 == SCORING_SPEC_SHA256
+    assert version.instrument.license_name == "O*NET Tools Developer License"
     assert version.verification_status == "unverified"
