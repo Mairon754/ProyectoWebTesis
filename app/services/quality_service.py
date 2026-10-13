@@ -395,3 +395,16 @@ def automatic_quality_is_current_and_passed(
         return False
     current_hash = evaluate_automatic_quality(session)["input_hash_sha256"]
     return latest.input_hash_sha256 == current_hash
+
+
+
+def automatic_quality_state(session: AssessmentSession) -> str:
+    """Devuelve not_run, stale, passed o blocked para el protocolo vigente."""
+
+    latest = latest_automatic_quality_check(session.id)
+    if latest is None:
+        return "not_run"
+    current_hash = evaluate_automatic_quality(session)["input_hash_sha256"]
+    if latest.input_hash_sha256 != current_hash:
+        return "stale"
+    return latest.status
