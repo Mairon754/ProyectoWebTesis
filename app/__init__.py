@@ -230,11 +230,19 @@ def _register_cli_commands(app: Flask) -> None:
             export_records_to_csv(all_rows),
             encoding="utf-8-sig",
         )
+        (output_dir / "all.json").write_text(
+            json.dumps(all_rows, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
         for split_name in ("train", "validation", "test"):
             rows = export_release_records(release, split_name=split_name)
             (output_dir / f"{split_name}.csv").write_text(
                 export_records_to_csv(rows),
                 encoding="utf-8-sig",
+            )
+            (output_dir / f"{split_name}.json").write_text(
+                json.dumps(rows, ensure_ascii=False, indent=2),
+                encoding="utf-8",
             )
 
         click.echo(f"Paquete generado en: {output_dir}")
