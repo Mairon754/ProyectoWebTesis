@@ -116,6 +116,130 @@ def _register_cli_commands(app: Flask) -> None:
         click.echo(f"target_protocol_version: {TARGET_PROTOCOL_VERSION}")
 
 
+    @app.cli.command("dataset-freeze")
+    @click.option("--version", required=True)
+    @click.option(
+        "--collection-phase",
+        required=True,
+        type=click.Choice(["pilot", "final"], case_sensitive=False),
+    )
+    @click.option("--train-ratio", required=True, type=str)
+    @click.option("--validation-ratio", required=True, type=str)
+    @click.option("--test-ratio", required=True, type=str)
+    def dataset_freeze_command(
+        version: str,
+        collection_phase: str,
+        train_ratio: str,
+        validation_ratio: str,
+        test_ratio: str,
+    ) -> None:
+        """Congela un release científico con splits explícitos."""
+
+        from .services.dataset_release_service import (
+            DatasetReleaseError,
+            freeze_dataset_release,
+            release_manifest,
+        )
+
+        try:
+            release = freeze_dataset_release(
+                version=version,
+                collection_phase=collection_phase.lower(),
+                train_ratio=train_ratio,
+                validation_ratio=validation_ratio,
+                test_ratio=test_ratio,
+            )
+            manifest = release_manifest(release)
+        except DatasetReleaseError as exc:
+            raise click.ClickException(str(exc)) from exc
+        except Exception as exc:
+            app.logger.exception("Falló la congelación del dataset.")
+            raise click.ClickException(
+                "No fue posible congelar el release científico."
+            ) from exc
+
+        click.echo(f"release: {manifest['version']}")
+        click.echo(f"phase: {manifest['collection_phase']}")
+        click.echo(f"records: {manifest['record_count']}")
+        click.echo(f"splits: {manifest['split_counts']}")
+        click.echo(f"release_hash_sha256: {manifest['release_hash_sha256']}")
+
+    @app.cli.command("dataset-manifest")
+    @click.option("--version", required=True)
+    def dataset_manifest_command(version: str) -> None:
+        """Imprime en JSON el manifiesto verificable de un release."""
+
+        import json
+
+        from .services.dataset_release_service import (
+            DatasetReleaseError,
+            get_dataset_release,
+            release_manifest,
+        )
+
+        try:
+            manifest = release_manifest(get_dataset_release(version))
+        except DatasetReleaseError as exc:
+            raise click.ClickException(str(exc)) from exc
+
+        click.echo(json.dumps(manifest, ensure_ascii=False, indent=2))
+
+    @app.cli.command("dataset-package")
+    @click.option("--version", required=True)
+    def dataset_package_command(version: str) -> None:
+        """Genera paquete local CSV+JSON bajo exports/dataset_releases/."""
+
+        import json
+        from pathlib import Path
+
+        from .services.dataset_release_service import (
+            DatasetReleaseError,
+            dataset_dictionary,
+            export_release_records,
+            get_dataset_release,
+            release_manifest,
+        )
+        from .services.dataset_service import export_records_to_csv
+
+        try:
+            release = get_dataset_release(version)
+            manifest = release_manifest(release)
+            dictionary = dataset_dictionary()
+        except DatasetReleaseError as exc:
+            raise click.ClickException(str(exc)) from exc
+
+        output_dir = (
+            Path(app.root_path).parent
+            / "exports"
+            / "dataset_releases"
+            / release.version
+        )
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        (output_dir / "manifest.json").write_text(
+            json.dumps(manifest, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+        (output_dir / "data_dictionary.json").write_text(
+            json.dumps(dictionary, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+
+        all_rows = export_release_records(release)
+        (output_dir / "all.csv").write_text(
+            export_records_to_csv(all_rows),
+            encoding="utf-8-sig",
+        )
+        for split_name in ("train", "validation", "test"):
+            rows = export_release_records(release, split_name=split_name)
+            (output_dir / f"{split_name}.csv").write_text(
+                export_records_to_csv(rows),
+                encoding="utf-8-sig",
+            )
+
+        click.echo(f"Paquete generado en: {output_dir}")
+        click.echo(f"release_hash_sha256: {release.release_hash_sha256}")
+
     @app.cli.command("privacy-purge-participant")
     @click.option("--participant-code", required=True)
     @click.option(
