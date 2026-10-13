@@ -2,7 +2,7 @@
 
 | Campo | Rol | Uso en X | Descripción |
 |---|---|---:|---|
-| participant_code | metadata | No | Código seudónimo aleatorio para trazabilidad interna. |
+| record_id | metadata | No | Identificador seudónimo específico del release; no corresponde al código operativo del participante. |
 | collection_phase | metadata | No | Indica si el registro procede de pilot o final. |
 | texto_combinado | predictor | Sí | Texto libre T01–T03 concatenado con separador [SEP]. |
 | score_r | primary_target | No | Puntaje Realista, escala 0–40. |
@@ -20,6 +20,6 @@
 
 ## Regla de uso
 
-Para el experimento comparativo principal, ninguna columna diferente de `texto_combinado` se considera predictor X bajo este contrato. En particular, `participant_code`, `collection_phase`, las respuestas IP01–IP60 y cualquier variable target quedan excluidas de X.
+Para el experimento comparativo principal, ninguna columna diferente de `texto_combinado` se considera predictor X bajo este contrato. En particular, `record_id`, `collection_phase`, el `participant_code` operativo, las respuestas IP01–IP60 y cualquier variable target quedan excluidas de X.
 
 La estructura puede evolucionar solo mediante una nueva versión del contrato y un nuevo release; no se debe modificar silenciosamente un release ya congelado.
