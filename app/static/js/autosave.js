@@ -3,7 +3,7 @@
  *
  * Principios:
  * - PostgreSQL/backend es la persistencia oficial;
- * - localStorage solo conserva una copia temporal de recuperación;
+ * - sessionStorage conserva una copia temporal limitada a la pestaña actual;
  * - una respuesta seleccionada se intenta persistir progresivamente;
  * - el estado de etapa/pregunta también se sincroniza con el backend;
  * - si se pierde conexión, se conserva una respuesta pendiente y se reintenta.
@@ -75,7 +75,7 @@
 
     function readLocalState() {
         try {
-            const raw = window.localStorage.getItem(storageKey);
+            const raw = window.sessionStorage.getItem(storageKey);
             if (!raw) {
                 return null;
             }
@@ -114,7 +114,7 @@
         };
 
         try {
-            window.localStorage.setItem(storageKey, JSON.stringify(state));
+            window.sessionStorage.setItem(storageKey, JSON.stringify(state));
         } catch (error) {
             console.warn("No fue posible guardar recuperación local RIASEC.", error);
         }
