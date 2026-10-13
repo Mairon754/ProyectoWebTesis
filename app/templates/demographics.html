@@ -5,16 +5,26 @@
 
 {% block content %}
 <section class="stage-header" aria-labelledby="demographics-title">
-    <span class="stage-kicker">Paso 2 · Contexto</span>
+    <span class="stage-kicker">Paso 2 · Elegibilidad y contexto</span>
     <h1 id="demographics-title">Datos generales</h1>
     <p class="lead">
-        Solicitamos únicamente la información necesaria para contextualizar la evaluación.
+        Solicitamos únicamente la información necesaria para comprobar
+        elegibilidad y contextualizar la evaluación.
     </p>
 </section>
 
 <div class="notice notice--info">
-    No escribas nombres, números de documento ni datos de contacto personales.
+    No escribas nombres, números de documento, teléfonos, correos ni otros
+    identificadores personales.
 </div>
+
+{% if collection_phase == 'final' %}
+<div class="notice notice--info section-block">
+    Esta es la <strong>muestra definitiva</strong>. Solo pueden participar
+    estudiantes de <strong>grado 11</strong> pertenecientes a una institución
+    previamente autorizada para el estudio en San Andrés de Tumaco.
+</div>
+{% endif %}
 
 <form method="post" class="card form-card">
     <div class="form-grid form-grid--two">
@@ -37,13 +47,34 @@
             <label for="grade">Grado</label>
             <select id="grade" name="grade" required>
                 <option value="">Selecciona</option>
+                {% if collection_phase == 'final' %}
+                <option value="11" selected>11°</option>
+                {% else %}
                 <option value="10" {% if form.get('grade') == '10' %}selected{% endif %}>10°</option>
                 <option value="11" {% if form.get('grade') == '11' %}selected{% endif %}>11°</option>
+                {% endif %}
             </select>
         </div>
 
         <div class="form-group">
-            <label for="institution_code">Código o nombre institucional</label>
+            <label for="institution_code">Institución participante</label>
+            {% if collection_phase == 'final' %}
+            <select id="institution_code" name="institution_code" required>
+                <option value="">Selecciona el código institucional</option>
+                {% for institution in authorized_institutions %}
+                <option
+                    value="{{ institution }}"
+                    {% if form.get('institution_code') == institution %}selected{% endif %}
+                >
+                    {{ institution }}
+                </option>
+                {% endfor %}
+            </select>
+            <p class="field-hint">
+                Solo aparecen instituciones previamente autorizadas para la
+                recolección definitiva.
+            </p>
+            {% else %}
             <input
                 type="text"
                 id="institution_code"
@@ -53,11 +84,24 @@
                 required
                 value="{{ form.get('institution_code', '') }}"
             >
-            <p class="field-hint">Utiliza el identificador definido para el estudio.</p>
+            <p class="field-hint">
+                En la prueba piloto utiliza el identificador definido por el equipo.
+            </p>
+            {% endif %}
         </div>
 
         <div class="form-group">
             <label for="municipality">Municipio</label>
+            {% if collection_phase == 'final' %}
+            <input
+                type="text"
+                id="municipality"
+                name="municipality"
+                value="San Andrés de Tumaco"
+                readonly
+                required
+            >
+            {% else %}
             <input
                 type="text"
                 id="municipality"
@@ -67,6 +111,7 @@
                 required
                 value="{{ form.get('municipality', '') }}"
             >
+            {% endif %}
         </div>
     </div>
 
@@ -98,7 +143,9 @@
 
     <div class="form-grid form-grid--two section-block">
         <div class="form-group">
-            <label for="gender_self_reported">Género <span class="muted">(opcional)</span></label>
+            <label for="gender_self_reported">
+                Género <span class="muted">(opcional)</span>
+            </label>
             <select id="gender_self_reported" name="gender_self_reported">
                 <option value="">Prefiero no indicarlo aquí</option>
                 <option value="mujer" {% if form.get('gender_self_reported') == 'mujer' %}selected{% endif %}>Mujer</option>
@@ -110,7 +157,9 @@
         </div>
 
         <div class="form-group">
-            <label for="has_career_in_mind">¿Tienes alguna carrera u ocupación en mente?</label>
+            <label for="has_career_in_mind">
+                ¿Tienes alguna carrera u ocupación en mente?
+            </label>
             <select id="has_career_in_mind" name="has_career_in_mind" required>
                 <option value="">Selecciona</option>
                 <option value="si" {% if form.get('has_career_in_mind') == 'si' %}selected{% endif %}>Sí</option>
@@ -121,7 +170,9 @@
     </div>
 
     <div class="form-group section-block">
-        <label for="career_in_mind_text">Si deseas, escribe cuál <span class="muted">(opcional)</span></label>
+        <label for="career_in_mind_text">
+            Si deseas, escribe cuál <span class="muted">(opcional)</span>
+        </label>
         <input
             type="text"
             id="career_in_mind_text"
@@ -133,7 +184,9 @@
     </div>
 
     <div class="form-actions section-block">
-        <a class="button button--secondary" href="{{ url_for('main.consent') }}">Volver</a>
+        <a class="button button--secondary" href="{{ url_for('main.consent') }}">
+            Volver
+        </a>
         <button type="submit">Iniciar preguntas</button>
     </div>
 </form>
