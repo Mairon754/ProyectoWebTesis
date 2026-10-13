@@ -29,6 +29,10 @@ from app.models import (
     SessionActivity,
     SessionSubject,
 )
+from app.services.quality_service import (
+    automatic_quality_is_current_and_passed,
+    latest_automatic_quality_check,
+)
 from app.services.riasec_protocol import (
     DERIVED_TARGET_COLUMNS,
     PRIMARY_TARGET_COLUMNS,
@@ -378,6 +382,11 @@ def review_session_quality(
         raise DatasetServiceError(
             "Solo una sesión finalizada puede incluirse en ML."
         )
+    if included_ml and not automatic_quality_is_current_and_passed(session):
+        raise DatasetServiceError(
+            "La sesión debe aprobar el control automático vigente antes de "
+            "marcarse included_ml=true."
+        )
     if normalized_status == "excluded" and not exclusion_reason:
         raise DatasetServiceError(
             "Una sesión excluida debe indicar exclusion_reason."
@@ -456,7 +465,14 @@ def get_eligible_sessions(*, included_ml_only: bool = True) -> list[AssessmentSe
             DataQualityReview.included_ml.is_(True),
         )
 
-    return list(db.session.execute(statement).scalars().unique().all())
+    sessions = list(db.session.execute(statement).scalars().unique().all())
+    if included_ml_only:
+        sessions = [
+            session
+            for session in sessions
+            if automatic_quality_is_current_and_passed(session)
+        ]
+    return sessions
 
 
 def build_dataset(
@@ -719,7 +735,14 @@ def get_research_sessions(
             raise DatasetServiceError("limit debe ser mayor que cero.")
         statement = statement.limit(limit)
 
-    return list(db.session.execute(statement).scalars().unique().all())
+    sessions = list(db.session.execute(statement).scalars().unique().all())
+    if included_ml_only:
+        sessions = [
+            session
+            for session in sessions
+            if automatic_quality_is_current_and_passed(session)
+        ]
+    return sessions
 
 
 def get_research_summary(
@@ -802,6 +825,12 @@ def build_quality_record(session: AssessmentSession) -> dict[str, Any]:
     """Fila de trazabilidad/calidad para una sesión, incluso incompleta."""
 
     review = session.quality_review
+    automatic_check = latest_automatic_quality_check(session.id)
+    automatic_current = (
+        automatic_quality_is_current_and_passed(session)
+        if automatic_check is not None
+        else False
+    )
     response_times = [
         response.response_time_ms
         for response in session.onet_responses
@@ -841,6 +870,19 @@ def build_quality_record(session: AssessmentSession) -> dict[str, Any]:
             if response_times
             else None
         ),
+        "automatic_quality_protocol": (
+            automatic_check.protocol_version if automatic_check else None
+        ),
+        "automatic_quality_status": (
+            automatic_check.status if automatic_check else "not_run"
+        ),
+        "automatic_quality_blockers": (
+            automatic_check.blocker_count if automatic_check else None
+        ),
+        "automatic_quality_warnings": (
+            automatic_check.warning_count if automatic_check else None
+        ),
+        "automatic_quality_current_passed": automatic_current,
         "quality_status": review.quality_status if review else "pending",
         "included_ml": bool(review and review.included_ml),
         "exclusion_reason": review.exclusion_reason if review else None,
