@@ -116,6 +116,11 @@ class AssessmentSession(db.Model):
         nullable=False,
         default="unknown",
     )
+    collection_phase = db.Column(
+        db.String(10),
+        nullable=False,
+        default="pilot",
+    )
     created_at = db.Column(
         db.DateTime(timezone=True),
         nullable=False,
@@ -230,6 +235,10 @@ class AssessmentSession(db.Model):
         db.CheckConstraint(
             "device_type IN ('mobile', 'tablet', 'desktop', 'unknown')",
             name="ck_assessment_sessions_device_type",
+        ),
+        db.CheckConstraint(
+            "collection_phase IN ('pilot', 'final')",
+            name="ck_assessment_sessions_collection_phase",
         ),
         db.Index("ix_assessment_sessions_status", "status"),
         db.Index(
