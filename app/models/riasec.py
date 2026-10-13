@@ -122,7 +122,7 @@ class RiasecResult(db.Model):
     scoring_version = db.Column(
         db.String(30),
         nullable=False,
-        default="RIASEC_SCORING_V1",
+        default="RIASEC_SCORING_PROVISIONAL_V1",
     )
     calculated_at = db.Column(
         db.DateTime(timezone=True),
