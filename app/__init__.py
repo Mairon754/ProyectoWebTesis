@@ -116,6 +116,38 @@ def _register_cli_commands(app: Flask) -> None:
         click.echo(f"target_protocol_version: {TARGET_PROTOCOL_VERSION}")
 
 
+    @app.cli.command("quality-scan")
+    @click.option(
+        "--scope",
+        type=click.Choice(["completed", "all"], case_sensitive=False),
+        default="completed",
+        show_default=True,
+    )
+    def quality_scan_command(scope: str) -> None:
+        """Ejecuta el protocolo automático vigente sobre sesiones existentes."""
+
+        from .services.dataset_service import get_research_sessions
+        from .services.quality_service import run_automatic_quality_check
+
+        sessions = get_research_sessions(
+            {},
+            completed_only=scope.lower() == "completed",
+        )
+        passed = 0
+        blocked = 0
+        warnings = 0
+        for assessment in sessions:
+            check = run_automatic_quality_check(assessment)
+            passed += check.status == "passed"
+            blocked += check.status == "blocked"
+            warnings += check.warning_count
+
+        click.echo(f"protocol: DATA_QC_V1_STRUCTURAL_COMPLETENESS")
+        click.echo(f"sessions_scanned: {len(sessions)}")
+        click.echo(f"passed: {passed}")
+        click.echo(f"blocked: {blocked}")
+        click.echo(f"warnings: {warnings}")
+
     @app.cli.command("dataset-freeze")
     @click.option("--version", required=True)
     @click.option(
