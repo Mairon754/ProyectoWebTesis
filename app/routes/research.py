@@ -9,6 +9,7 @@ variables de entorno y contraseñas almacenadas como hash Werkzeug.
 
 from __future__ import annotations
 
+import hashlib
 import hmac
 import secrets
 import uuid
@@ -86,6 +87,44 @@ def _configured_accounts() -> list[dict[str, str]]:
     ]
 
 
+def _account_session_fingerprint(account: dict[str, str]) -> str:
+    """Invalida sesiones cuando cambia contraseña, usuario o rol configurado."""
+
+    payload = "|".join(
+        (
+            account["username"],
+            account["password_hash"],
+            account["role"],
+        )
+    ).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
+def _active_configured_account() -> dict[str, str] | None:
+    """Resuelve la cuenta actual y verifica que su configuración no cambió."""
+
+    username = str(session.get("researcher_username", "")).strip().lower()
+    fingerprint = str(session.get("researcher_session_fingerprint", ""))
+    if not username or not fingerprint:
+        return None
+
+    account = next(
+        (
+            item
+            for item in _configured_accounts()
+            if hmac.compare_digest(item["username"], username)
+        ),
+        None,
+    )
+    if account is None:
+        return None
+
+    expected = _account_session_fingerprint(account)
+    if not hmac.compare_digest(expected, fingerprint):
+        return None
+    return account
+
+
 def _csrf_token() -> str:
     """Obtiene o crea un token CSRF de sesión sin dependencias adicionales."""
 
@@ -110,8 +149,14 @@ def researcher_required(view: F) -> F:
 
     @wraps(view)
     def wrapped(*args: Any, **kwargs: Any):
-        if not session.get("researcher_username"):
+        account = _active_configured_account()
+        if account is None:
+            session.clear()
             return redirect(url_for("research.login"))
+        session["researcher_role"] = account["role"]
+        session["researcher_display_name"] = (
+            account["display_name"] or account["username"]
+        )
         return view(*args, **kwargs)
 
     return wrapped  # type: ignore[return-value]
@@ -122,9 +167,15 @@ def data_manager_required(view: F) -> F:
 
     @wraps(view)
     def wrapped(*args: Any, **kwargs: Any):
-        if not session.get("researcher_username"):
+        account = _active_configured_account()
+        if account is None:
+            session.clear()
             return redirect(url_for("research.login"))
-        if session.get("researcher_role") != "data_manager":
+        session["researcher_role"] = account["role"]
+        session["researcher_display_name"] = (
+            account["display_name"] or account["username"]
+        )
+        if account["role"] != "data_manager":
             abort(403, description="Esta operación requiere rol data_manager.")
         return view(*args, **kwargs)
 
@@ -221,6 +272,10 @@ def login():
                     if account["role"] in {"viewer", "data_manager"}
                     else "viewer"
                 )
+                session["researcher_session_fingerprint"] = (
+                    _account_session_fingerprint(account)
+                )
+                session.permanent = True
                 _csrf_token()
                 _audit_research_event(
                     action="login",
