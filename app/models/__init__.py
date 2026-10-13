@@ -15,6 +15,7 @@ from .assessment import (
 from .dataset import DatasetRelease, DatasetReleaseMember
 from .instrument import Instrument, InstrumentVersion, InterestItem, ONetItem
 from .participant import ConsentRecord, Participant
+from .quality import AutomaticQualityCheck
 from .responses import InterestResponse, ONetResponse, OpenResponse
 from .research import ResearchAuditEvent
 from .riasec import RiasecDimension, RiasecResult
@@ -22,6 +23,7 @@ from .riasec import RiasecDimension, RiasecResult
 __all__ = [
     "Activity",
     "AssessmentSession",
+    "AutomaticQualityCheck",
     "ConsentRecord",
     "DataQualityReview",
     "DatasetRelease",
