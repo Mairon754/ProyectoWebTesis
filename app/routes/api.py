@@ -24,6 +24,7 @@ from app.services.access_service import (
 )
 from app.services.assessment_service import (
     CURRENT_CONSENT_VERSION,
+    DEFAULT_INSTRUMENT_VERSION,
     AssessmentConflictError,
     AssessmentNotFoundError,
     AssessmentServiceError,
@@ -270,9 +271,7 @@ def assessment_start():
                 "guardian_consent_reference"
             ),
             collection_method=str(consent.get("collection_method", "digital")),
-            instrument_version_code=str(
-                data.get("instrument_version_code", "IP_ES_60_V1")
-            ),
+            instrument_version_code=DEFAULT_INSTRUMENT_VERSION,
         )
         bind_assessment_to_browser(assessment.id)
         access_token = issue_assessment_access_token(assessment.id)
