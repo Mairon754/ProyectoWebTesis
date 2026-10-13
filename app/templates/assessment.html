@@ -17,6 +17,12 @@
 
 {% block content %}
 {% if assessment and question %}
+<noscript>
+    <div class="notice notice--info" role="status">
+        La evaluación funciona sin JavaScript mediante los botones del formulario.
+        El lector de voz, los gestos y el guardado automático no estarán disponibles.
+    </div>
+</noscript>
 <section
     class="assessment-experience"
     data-assessment-experience
