@@ -145,6 +145,22 @@ python -m flask --app run.py repro-status
 python -m flask --app run.py experiment-register --run-code RUN_001 --dataset-version VERSION_DATASET --model-name MODELO --model-version VERSION_MODELO --run-type evaluation --seed 42 --hyperparameters-json "{}" --conditions-json "{\"split\":\"test\"}"
 ```
 
+## Experiencia del participante
+
+La interfaz conserva como fortalezas del prototipo:
+
+- navegación por teclado y foco visible;
+- enlace para saltar al contenido;
+- progreso accesible;
+- lectura opcional en voz alta;
+- soporte para movimiento reducido y colores forzados;
+- modo claro/oscuro;
+- guardado automático con recuperación temporal limitada a la pestaña;
+- funcionamiento básico mediante formularios aunque JavaScript esté desactivado;
+- resultados presentados como **perfil de intereses RIASEC**, no como diagnóstico psicológico.
+
+Detalles y límites: `docs/product/PHASE_9_CONSOLIDATED_STRENGTHS.md`.
+
 ## Seguridad y datos
 
 No deben subirse al repositorio:
