@@ -305,22 +305,6 @@ def create_assessment(
             "vigente de la plataforma."
         )
 
-    if assent_accepted is False:
-        raise AssessmentValidationError(
-            "No se puede iniciar una evaluación si el estudiante no acepta participar."
-        )
-
-    if guardian_consent_required and assent_accepted is not True:
-        raise AssessmentValidationError(
-            "Cuando se requiere consentimiento del acudiente, también se requiere "
-            "el asentimiento del estudiante."
-        )
-
-    if guardian_consent_required and not guardian_consent_reference:
-        raise AssessmentValidationError(
-            "Se requiere una referencia del consentimiento del acudiente."
-        )
-
     if collection_method not in {"digital", "paper", "institutional"}:
         raise AssessmentValidationError("Método de consentimiento no válido.")
 
