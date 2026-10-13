@@ -356,3 +356,23 @@ def test_csv_export_neutralizes_formula_like_text():
     )
 
     assert "'=HYPERLINK" in content
+
+
+
+def test_participant_purge_cascades_from_active_database(assessment_builder):
+    from sqlalchemy import select
+
+    from app.extensions import db
+    from app.models import Participant
+    from app.services.assessment_service import purge_participant_data
+
+    assessment = assessment_builder(fill=True, finalize=True)
+    code = assessment.participant.participant_code
+
+    result = purge_participant_data(code)
+
+    assert result["assessment_sessions_deleted"] == 1
+    assert result["consent_records_deleted"] == 1
+    assert db.session.execute(
+        select(Participant).where(Participant.participant_code == code)
+    ).scalar_one_or_none() is None
