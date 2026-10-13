@@ -31,6 +31,7 @@ from app.models import (
 )
 from app.services.quality_service import (
     automatic_quality_is_current_and_passed,
+    automatic_quality_state,
     latest_automatic_quality_check,
 )
 from app.services.riasec_protocol import (
@@ -760,6 +761,10 @@ def get_research_summary(
         for session in sessions
     ]
 
+    automatic_states = [
+        automatic_quality_state(session) for session in sessions
+    ]
+
     return {
         "participants": len({session.participant_id for session in sessions}),
         "sessions": len(sessions),
@@ -775,6 +780,10 @@ def get_research_summary(
             bool(session.quality_review and session.quality_review.included_ml)
             for session in sessions
         ),
+        "automatic_quality_passed": automatic_states.count("passed"),
+        "automatic_quality_blocked": automatic_states.count("blocked"),
+        "automatic_quality_stale": automatic_states.count("stale"),
+        "automatic_quality_not_run": automatic_states.count("not_run"),
     }
 
 
@@ -873,9 +882,7 @@ def build_quality_record(session: AssessmentSession) -> dict[str, Any]:
         "automatic_quality_protocol": (
             automatic_check.protocol_version if automatic_check else None
         ),
-        "automatic_quality_status": (
-            automatic_check.status if automatic_check else "not_run"
-        ),
+        "automatic_quality_status": automatic_quality_state(session),
         "automatic_quality_blockers": (
             automatic_check.blocker_count if automatic_check else None
         ),
