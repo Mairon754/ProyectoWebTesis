@@ -105,6 +105,13 @@ def _deterministic_order_key(version: str, participant_code: str) -> str:
     )
 
 
+def _release_record_id(version: str, participant_code: str) -> str:
+    """Genera un identificador específico del release sin exponer código fuente."""
+
+    digest = _sha256(f"RELEASE_RECORD_V1|{version}|{participant_code}")
+    return f"RID-{digest[:24]}"
+
+
 def assign_participant_splits(
     participant_codes: Iterable[str],
     *,
@@ -174,8 +181,9 @@ def dataset_contract() -> dict[str, Any]:
             "profile_3",
             "holland_code",
             "tie_top1",
-            "participant_code",
+            "record_id",
             "collection_phase",
+            "participant_code",
         ],
     }
 
@@ -186,10 +194,10 @@ def dataset_dictionary() -> dict[str, Any]:
     return {
         "contract_version": PRIMARY_EXPERIMENT_CONTRACT_VERSION,
         "columns": {
-            "participant_code": {
+            "record_id": {
                 "role": "metadata",
                 "description": (
-                    "Código seudónimo aleatorio para trazabilidad; no usar como X."
+                    "Identificador seudónimo específico del release; no usar como X."
                 ),
             },
             "collection_phase": {
@@ -348,11 +356,14 @@ def freeze_dataset_release(
     if not instrument_hash or not scoring_hash:
         raise DatasetReleaseError("Faltan hashes científicos del instrumento/scoring.")
 
-    frozen_rows: list[dict[str, Any]] = []
+    frozen_rows: list[tuple[str, dict[str, Any]]] = []
     for record in sorted(records, key=lambda row: row["participant_code"]):
+        source_code = record["participant_code"]
         row = dict(record)
-        row["split"] = assignments[row["participant_code"]]
-        frozen_rows.append(row)
+        row.pop("participant_code", None)
+        row["record_id"] = _release_record_id(normalized_version, source_code)
+        row["split"] = assignments[source_code]
+        frozen_rows.append((source_code, row))
 
     release_payload = {
         "version": normalized_version,
@@ -367,7 +378,7 @@ def freeze_dataset_release(
         "instrument_version_code": instrument_code,
         "instrument_content_hash_sha256": instrument_hash,
         "scoring_spec_sha256": scoring_hash,
-        "records": frozen_rows,
+        "records": [row for _, row in frozen_rows],
     }
     release_hash = _sha256(release_payload)
 
@@ -391,12 +402,12 @@ def freeze_dataset_release(
     db.session.add(release)
     db.session.flush()
 
-    for row in frozen_rows:
+    for source_code, row in frozen_rows:
         record_hash = _sha256(row)
         db.session.add(
             DatasetReleaseMember(
                 release_id=release.id,
-                participant_code=row["participant_code"],
+                participant_code=source_code,
                 split_name=row["split"],
                 record_hash_sha256=record_hash,
                 record_json=row,
