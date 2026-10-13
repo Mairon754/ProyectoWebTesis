@@ -124,3 +124,111 @@ def test_research_dataset_excludes_onet_items_from_ml_predictors(assessment_buil
     assert not any(key.lower().startswith("ip") for key in rows[0])
     assert "score_r" in rows[0]
     assert "g01" in rows[0]
+
+
+
+def test_minor_requires_guardian_consent(db_context, demographics):
+    from app.services.assessment_service import (
+        CURRENT_CONSENT_VERSION,
+        create_assessment,
+    )
+
+    with pytest.raises(
+        AssessmentValidationError,
+        match="menores de edad requieren consentimiento",
+    ):
+        create_assessment(
+            demographics=demographics,
+            consent_version=CURRENT_CONSENT_VERSION,
+            consent_accepted=True,
+            assent_accepted=True,
+            guardian_consent_required=False,
+        )
+
+
+def test_minor_requires_own_assent(db_context, demographics):
+    from app.services.assessment_service import (
+        CURRENT_CONSENT_VERSION,
+        create_assessment,
+    )
+
+    with pytest.raises(
+        AssessmentValidationError,
+        match="requieren asentimiento propio",
+    ):
+        create_assessment(
+            demographics=demographics,
+            consent_version=CURRENT_CONSENT_VERSION,
+            consent_accepted=True,
+            assent_accepted=False,
+            guardian_consent_required=True,
+            guardian_consent_reference="GUARD-TEST-002",
+            collection_method="institutional",
+        )
+
+
+def test_final_collection_rejects_grade_10(app, db_context, demographics):
+    from app.services.assessment_service import (
+        CURRENT_CONSENT_VERSION,
+        create_assessment,
+    )
+
+    previous_phase = app.config.get("COLLECTION_PHASE")
+    previous_codes = app.config.get("AUTHORIZED_INSTITUTION_CODES")
+    app.config["COLLECTION_PHASE"] = "final"
+    app.config["AUTHORIZED_INSTITUTION_CODES"] = ("INST_TEST",)
+
+    grade_10 = dict(demographics)
+    grade_10["grade"] = 10
+
+    try:
+        with pytest.raises(
+            AssessmentValidationError,
+            match="restringida a estudiantes de grado 11",
+        ):
+            create_assessment(
+                demographics=grade_10,
+                consent_version=CURRENT_CONSENT_VERSION,
+                consent_accepted=True,
+                assent_accepted=True,
+                guardian_consent_required=True,
+                guardian_consent_reference="GUARD-TEST-003",
+                collection_method="institutional",
+            )
+    finally:
+        app.config["COLLECTION_PHASE"] = previous_phase
+        app.config["AUTHORIZED_INSTITUTION_CODES"] = previous_codes
+
+
+def test_final_collection_rejects_unauthorized_institution(
+    app,
+    db_context,
+    demographics,
+):
+    from app.services.assessment_service import (
+        CURRENT_CONSENT_VERSION,
+        create_assessment,
+    )
+
+    previous_phase = app.config.get("COLLECTION_PHASE")
+    previous_codes = app.config.get("AUTHORIZED_INSTITUTION_CODES")
+    app.config["COLLECTION_PHASE"] = "final"
+    app.config["AUTHORIZED_INSTITUTION_CODES"] = ("OTHER_INST",)
+
+    try:
+        with pytest.raises(
+            AssessmentValidationError,
+            match="institución no está autorizada",
+        ):
+            create_assessment(
+                demographics=demographics,
+                consent_version=CURRENT_CONSENT_VERSION,
+                consent_accepted=True,
+                assent_accepted=True,
+                guardian_consent_required=True,
+                guardian_consent_reference="GUARD-TEST-004",
+                collection_method="institutional",
+            )
+    finally:
+        app.config["COLLECTION_PHASE"] = previous_phase
+        app.config["AUTHORIZED_INSTITUTION_CODES"] = previous_codes
