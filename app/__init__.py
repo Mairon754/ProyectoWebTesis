@@ -280,6 +280,159 @@ def _register_cli_commands(app: Flask) -> None:
         click.echo(f"Paquete generado en: {output_dir}")
         click.echo(f"release_hash_sha256: {release.release_hash_sha256}")
 
+    @app.cli.command("experiment-register")
+    @click.option("--run-code", required=True)
+    @click.option("--dataset-version", required=True)
+    @click.option("--model-name", required=True)
+    @click.option("--model-version", required=True)
+    @click.option(
+        "--run-type",
+        required=True,
+        type=click.Choice(
+            ["training", "inference", "evaluation"],
+            case_sensitive=False,
+        ),
+    )
+    @click.option("--seed", type=int, default=None)
+    @click.option(
+        "--hyperparameters-json",
+        required=True,
+        help="Objeto JSON sin secretos.",
+    )
+    @click.option(
+        "--conditions-json",
+        required=True,
+        help="Objeto JSON con condiciones controladas de ejecución.",
+    )
+    def experiment_register_command(
+        run_code: str,
+        dataset_version: str,
+        model_name: str,
+        model_version: str,
+        run_type: str,
+        seed: int | None,
+        hyperparameters_json: str,
+        conditions_json: str,
+    ) -> None:
+        """Registra el manifiesto reproducible antes de una ejecución."""
+
+        import json
+
+        from .services.experiment_service import (
+            ExperimentRunError,
+            experiment_manifest,
+            register_experiment_run,
+        )
+
+        try:
+            hyperparameters = json.loads(hyperparameters_json)
+            conditions = json.loads(conditions_json)
+        except json.JSONDecodeError as exc:
+            raise click.ClickException(
+                "Los campos JSON deben contener objetos JSON válidos."
+            ) from exc
+        if not isinstance(hyperparameters, dict) or not isinstance(conditions, dict):
+            raise click.ClickException(
+                "--hyperparameters-json y --conditions-json deben ser objetos JSON."
+            )
+
+        try:
+            run = register_experiment_run(
+                run_code=run_code,
+                dataset_version=dataset_version,
+                model_name=model_name,
+                model_version=model_version,
+                run_type=run_type.lower(),
+                seed=seed,
+                hyperparameters=hyperparameters,
+                conditions=conditions,
+            )
+        except ExperimentRunError as exc:
+            raise click.ClickException(str(exc)) from exc
+
+        manifest = experiment_manifest(run)
+        click.echo(f"run_code: {manifest['run_code']}")
+        click.echo(f"dataset_version: {manifest['dataset_version']}")
+        click.echo(
+            f"dataset_release_hash_sha256: "
+            f"{manifest['dataset_release_hash_sha256']}"
+        )
+        click.echo(f"code_commit_sha: {manifest['code_commit_sha']}")
+        click.echo(f"git_dirty: {manifest['git_dirty']}")
+        click.echo(
+            f"manifest_hash_sha256: {manifest['manifest_hash_sha256']}"
+        )
+
+    @app.cli.command("experiment-complete")
+    @click.option("--run-code", required=True)
+    @click.option("--metrics-json", required=True)
+    def experiment_complete_command(
+        run_code: str,
+        metrics_json: str,
+    ) -> None:
+        """Cierra una ejecución y conserva sus métricas como JSON."""
+
+        import json
+
+        from .services.experiment_service import (
+            ExperimentRunError,
+            complete_experiment_run,
+        )
+
+        try:
+            metrics = json.loads(metrics_json)
+        except json.JSONDecodeError as exc:
+            raise click.ClickException("--metrics-json no es JSON válido.") from exc
+        if not isinstance(metrics, dict):
+            raise click.ClickException("--metrics-json debe ser un objeto JSON.")
+
+        try:
+            run = complete_experiment_run(run_code, metrics=metrics)
+        except ExperimentRunError as exc:
+            raise click.ClickException(str(exc)) from exc
+
+        click.echo(f"run_code: {run.run_code}")
+        click.echo(f"status: {run.status}")
+
+    @app.cli.command("experiment-fail")
+    @click.option("--run-code", required=True)
+    @click.option("--reason", required=True)
+    def experiment_fail_command(run_code: str, reason: str) -> None:
+        """Cierra una ejecución fallida sin almacenar trazas sensibles."""
+
+        from .services.experiment_service import (
+            ExperimentRunError,
+            fail_experiment_run,
+        )
+
+        try:
+            run = fail_experiment_run(run_code, reason=reason)
+        except ExperimentRunError as exc:
+            raise click.ClickException(str(exc)) from exc
+
+        click.echo(f"run_code: {run.run_code}")
+        click.echo(f"status: {run.status}")
+
+    @app.cli.command("experiment-manifest")
+    @click.option("--run-code", required=True)
+    def experiment_manifest_command(run_code: str) -> None:
+        """Imprime el manifiesto reproducible de una ejecución."""
+
+        import json
+
+        from .services.experiment_service import (
+            ExperimentRunError,
+            experiment_manifest,
+            get_experiment_run,
+        )
+
+        try:
+            manifest = experiment_manifest(get_experiment_run(run_code))
+        except ExperimentRunError as exc:
+            raise click.ClickException(str(exc)) from exc
+
+        click.echo(json.dumps(manifest, ensure_ascii=False, indent=2))
+
     @app.cli.command("privacy-purge-participant")
     @click.option("--participant-code", required=True)
     @click.option(
