@@ -979,7 +979,8 @@ def finalize_assessment(session_id: uuid.UUID | str) -> AssessmentSession:
         )
 
     try:
-        calculate_session_result(assessment, commit=False)
+        result = calculate_session_result(assessment, commit=False)
+        assessment.riasec_result = result
         now = utcnow()
         assessment.completed_at = now
         assessment.status = "completed"
