@@ -5,42 +5,44 @@
 
 {% block content %}
 <section class="stage-header" aria-labelledby="consent-title">
-    <span class="stage-kicker">Paso 1 · Consentimiento informado</span>
-    <h1 id="consent-title">Consentimiento informado y autorización</h1>
+    <span class="stage-kicker">Paso 1 · Participación ética</span>
+    <h1 id="consent-title">Consentimiento informado y asentimiento</h1>
     <p class="lead">
-        Lee esta información antes de decidir si deseas participar en la prueba piloto.
+        Antes de recolectar cualquier dato, necesitamos verificar qué modalidad
+        de autorización corresponde a tu edad.
     </p>
 </section>
 
-<section
-    class="card card--padded legal-consent"
-    aria-labelledby="legal-basis-title"
->
+<section class="card card--padded legal-consent" aria-labelledby="legal-basis-title">
     <div class="legal-consent__heading">
         <span class="legal-consent__badge" aria-hidden="true">§</span>
         <div>
             <p class="legal-consent__eyebrow">Información del estudio</p>
-            <h2 id="legal-basis-title">Fundamento ético y protección de datos</h2>
+            <h2 id="legal-basis-title">Participación voluntaria y protección de datos</h2>
         </div>
     </div>
 
     <div class="legal-consent__text">
         <p>
-            El presente estudio se fundamenta en los principios éticos y morales
-            del código deontológico y bioético de la Ley 1090 del 2006, la cual
-            regula el ejercicio dentro de la profesión de psicología.
+            Esta plataforma forma parte de una investigación académica sobre
+            intereses vocacionales RIASEC en estudiantes de educación media.
+            La participación es voluntaria y puedes decidir no continuar.
         </p>
         <p>
-            La participación será totalmente voluntaria y podrá retirarse en
-            cualquier momento sin encontrarse con ninguna sanción. Los datos
-            personales serán protegidos conforme a la Ley 1581 de 2012, el
-            Decreto 1377 de 2013 y el Decreto 1081 de 2015.
+            Los datos se utilizarán con fines académicos y de investigación.
+            No debes escribir nombres, números de documento, teléfonos,
+            direcciones ni otros identificadores personales.
         </p>
         <p>
-            En caso de dudas, explicaciones adicionales o inconformidades,
-            podrán presentarlas oportunamente con los investigadores
-            <strong>Mairon Andres Cuabu</strong> y
-            <strong>Frank Manuell Cortes Carreño</strong>.
+            Si eres menor de 18 años, la participación requiere dos condiciones:
+            <strong>autorización previa del acudiente</strong> y
+            <strong>tu propio asentimiento</strong>. La plataforma no solicita
+            el nombre del acudiente; únicamente registra una referencia de la
+            autorización previamente gestionada por la institución.
+        </p>
+        <p>
+            Si tienes 18 años o más, puedes otorgar directamente tu
+            consentimiento para participar.
         </p>
     </div>
 
@@ -54,32 +56,79 @@
     </div>
 </section>
 
-<section
-    class="card card--padded section-block"
-    aria-labelledby="authorization-title"
->
-    <h2 id="authorization-title">Autorización para uso académico</h2>
-    <p>
-        <strong>Autorizo:</strong> Que los investigadores Mairon Andres Cuabu y
-        Frank Manuell Cortes Carreño utilicen los datos de esta encuesta con
-        fines académicos presentados en la prueba piloto de la presente
-        investigación.
-    </p>
-
-    <div class="notice notice--info">
-        La plataforma registra la aceptación digital junto con la versión del
-        consentimiento y la fecha/hora de aceptación. Puedes decidir no
-        continuar antes de iniciar la evaluación.
-    </div>
-</section>
-
 <form method="post" id="consent-form" class="card form-card">
-    <fieldset>
-        <legend>Confirma tu decisión para continuar</legend>
-        <p class="field-hint">
-            Las tres confirmaciones son necesarias para iniciar la prueba piloto.
-        </p>
+    <fieldset class="selection-section">
+        <legend>1. Selecciona la modalidad que corresponde a tu edad</legend>
+        <div class="choice-grid choice-grid--two">
+            <label class="choice-card">
+                <input
+                    type="radio"
+                    name="age_group"
+                    value="minor"
+                    required
+                    {% if age_group == 'minor' %}checked{% endif %}
+                >
+                <span class="choice-card__text">Soy menor de 18 años</span>
+            </label>
+            <label class="choice-card">
+                <input
+                    type="radio"
+                    name="age_group"
+                    value="adult"
+                    required
+                    {% if age_group == 'adult' %}checked{% endif %}
+                >
+                <span class="choice-card__text">Tengo 18 años o más</span>
+            </label>
+        </div>
+    </fieldset>
 
+    <section
+        class="section-block"
+        id="minor-consent-section"
+        aria-labelledby="guardian-title"
+        hidden
+    >
+        <h2 id="guardian-title">Autorización del acudiente</h2>
+        <div class="notice notice--info">
+            Continúa únicamente si tu acudiente ya autorizó tu participación por
+            el mecanismo definido con la institución educativa.
+        </div>
+
+        <div class="form-group">
+            <label for="guardian_consent_reference">
+                Referencia de autorización del acudiente
+            </label>
+            <input
+                type="text"
+                id="guardian_consent_reference"
+                name="guardian_consent_reference"
+                minlength="6"
+                maxlength="100"
+                autocomplete="off"
+                value="{{ guardian_consent_reference }}"
+            >
+            <p class="field-hint">
+                Escribe solamente el código o referencia entregada para el estudio.
+                No escribas el nombre, documento ni teléfono del acudiente.
+            </p>
+        </div>
+
+        <label class="checkbox-card">
+            <input
+                type="checkbox"
+                name="assent_accepted"
+                id="assent-accepted"
+                {% if assent_accepted %}checked{% endif %}
+            >
+            <span class="checkbox-card__text">
+                Yo también acepto participar voluntariamente en el estudio.
+            </span>
+        </label>
+    </section>
+
+    <fieldset class="section-block">
+        <legend>2. Confirma tu decisión</legend>
         <div class="consent-list">
             <label class="checkbox-card">
                 <input
@@ -89,7 +138,7 @@
                     {% if understood %}checked{% endif %}
                 >
                 <span class="checkbox-card__text">
-                    He leído y comprendido la información del consentimiento informado.
+                    He leído y comprendido la información presentada.
                 </span>
             </label>
 
@@ -101,7 +150,8 @@
                     {% if voluntary %}checked{% endif %}
                 >
                 <span class="checkbox-card__text">
-                    Acepto participar voluntariamente y comprendo que puedo retirarme.
+                    Comprendo que mi participación es voluntaria y que puedo
+                    decidir no continuar.
                 </span>
             </label>
 
@@ -113,12 +163,17 @@
                     {% if data_authorization %}checked{% endif %}
                 >
                 <span class="checkbox-card__text">
-                    Autorizo el uso de los datos de esta encuesta con fines académicos
-                    en la prueba piloto de la presente investigación.
+                    Autorizo el uso académico de los datos anonimizados obtenidos
+                    durante esta evaluación.
                 </span>
             </label>
         </div>
     </fieldset>
+
+    <div class="notice notice--info section-block">
+        Fase de recolección configurada:
+        <strong>{{ 'muestra definitiva' if collection_phase == 'final' else 'prueba piloto' }}</strong>.
+    </div>
 
     <div class="form-actions section-block">
         <a class="button button--secondary" href="{{ url_for('main.index') }}">
@@ -132,9 +187,9 @@
 
 <section class="legal-review-note" aria-label="Nota del consentimiento">
     <p>
-        Este consentimiento corresponde a la versión legal mostrada en esta
-        pantalla y debe mantenerse sin cambios durante una misma aplicación de
-        la prueba piloto.
+        La plataforma registra la versión del consentimiento, la fecha/hora,
+        la modalidad de autorización y, cuando corresponde, la referencia del
+        consentimiento del acudiente.
     </p>
 </section>
 {% endblock %}
@@ -142,23 +197,64 @@
 {% block scripts %}
 <script>
 (function () {
+    const ageInputs = Array.from(
+        document.querySelectorAll('input[name="age_group"]')
+    );
+    const minorSection = document.getElementById("minor-consent-section");
+    const guardianReference = document.getElementById(
+        "guardian_consent_reference"
+    );
+    const assent = document.getElementById("assent-accepted");
     const understood = document.getElementById("understood");
     const voluntary = document.getElementById("voluntary");
     const dataAuthorization = document.getElementById("data-authorization");
     const button = document.getElementById("continue-button");
 
+    function selectedAgeGroup() {
+        return ageInputs.find((input) => input.checked)?.value || "";
+    }
+
+    function syncMinorSection() {
+        const isMinor = selectedAgeGroup() === "minor";
+        minorSection.hidden = !isMinor;
+        guardianReference.required = isMinor;
+        assent.required = isMinor;
+        updateButton();
+    }
+
     function updateButton() {
+        const ageGroup = selectedAgeGroup();
+        const isMinor = ageGroup === "minor";
+        const guardianOk = !isMinor
+            || (
+                guardianReference.value.trim().length >= 6
+                && assent.checked
+            );
+
         button.disabled = !(
-            understood.checked
+            ageGroup
+            && understood.checked
             && voluntary.checked
             && dataAuthorization.checked
+            && guardianOk
         );
     }
 
-    understood.addEventListener("change", updateButton);
-    voluntary.addEventListener("change", updateButton);
-    dataAuthorization.addEventListener("change", updateButton);
-    updateButton();
+    ageInputs.forEach((input) => {
+        input.addEventListener("change", syncMinorSection);
+    });
+    [
+        guardianReference,
+        assent,
+        understood,
+        voluntary,
+        dataAuthorization,
+    ].forEach((element) => {
+        element.addEventListener("input", updateButton);
+        element.addEventListener("change", updateButton);
+    });
+
+    syncMinorSection();
 }());
 </script>
 {% endblock %}
