@@ -15,6 +15,13 @@ from typing import Any
 
 from flask import Blueprint, current_app, jsonify, request
 
+from app.services.access_service import (
+    ASSESSMENT_ACCESS_HEADER,
+    AssessmentAccessError,
+    bind_assessment_to_browser,
+    issue_assessment_access_token,
+    require_assessment_access,
+)
 from app.services.assessment_service import (
     CURRENT_CONSENT_VERSION,
     AssessmentConflictError,
@@ -93,6 +100,8 @@ def _service_error_response(error: Exception):
 
     if isinstance(error, ApiRequestError):
         return _error(str(error), 400)
+    if isinstance(error, AssessmentAccessError):
+        return _error("No autorizado para esta evaluación.", 403)
     if isinstance(error, AssessmentNotFoundError):
         return _error(str(error), 404)
     if isinstance(error, AssessmentConflictError):
@@ -175,6 +184,7 @@ def assessment_state():
         return _error("Falta el parámetro session_id.", 400)
 
     try:
+        require_assessment_access(session_id)
         assessment = get_assessment(session_id)
         progress = get_progress(session_id)
     except Exception as exc:
@@ -203,6 +213,7 @@ def assessment_questions():
         return _error("Falta el parámetro session_id.", 400)
 
     try:
+        require_assessment_access(session_id)
         questions = get_questions(session_id)
         progress = get_progress(session_id)
     except Exception as exc:
@@ -259,11 +270,12 @@ def assessment_start():
                 "guardian_consent_reference"
             ),
             collection_method=str(consent.get("collection_method", "digital")),
-            participant_code=data.get("participant_code"),
             instrument_version_code=str(
                 data.get("instrument_version_code", "IP_ES_60_V1")
             ),
         )
+        bind_assessment_to_browser(assessment.id)
+        access_token = issue_assessment_access_token(assessment.id)
     except Exception as exc:
         return _service_error_response(exc)
 
@@ -271,6 +283,8 @@ def assessment_start():
         {
             "session_id": str(assessment.id),
             "participant_code": assessment.participant.participant_code,
+            "access_token": access_token,
+            "access_header": ASSESSMENT_ACCESS_HEADER,
             "status": assessment.status,
             "stage": assessment.current_stage,
             "current_item_index": assessment.current_item_index,
@@ -288,8 +302,10 @@ def assessment_response():
 
     try:
         data = _payload()
+        session_id = _required(data, "session_id")
+        require_assessment_access(session_id)
         response = register_onet_response(
-            session_id=_required(data, "session_id"),
+            session_id=session_id,
             item_id=_required(data, "item_id"),
             response_raw=_required(data, "response_raw"),
             response_time_ms=data.get("response_time_ms"),
@@ -318,8 +334,10 @@ def assessment_autosave():
 
     try:
         data = _payload()
+        session_id = _required(data, "session_id")
+        require_assessment_access(session_id)
         assessment = update_assessment_state(
-            session_id=_required(data, "session_id"),
+            session_id=session_id,
             stage=data.get("stage"),
             current_item_index=data.get("current_item_index"),
         )
@@ -343,8 +361,10 @@ def assessment_interest_response():
 
     try:
         data = _payload()
+        session_id = _required(data, "session_id")
+        require_assessment_access(session_id)
         response = register_interest_response(
-            session_id=_required(data, "session_id"),
+            session_id=session_id,
             item_code=str(_required(data, "item_code")),
             response_value=_required(data, "response_value"),
         )
@@ -367,8 +387,10 @@ def assessment_subjects():
 
     try:
         data = _payload()
+        session_id = _required(data, "session_id")
+        require_assessment_access(session_id)
         links = replace_subject_selections(
-            session_id=_required(data, "session_id"),
+            session_id=session_id,
             subject_codes=_required_list(data, "subject_codes"),
             other_text=data.get("other_text"),
         )
@@ -389,8 +411,10 @@ def assessment_activities():
 
     try:
         data = _payload()
+        session_id = _required(data, "session_id")
+        require_assessment_access(session_id)
         links = replace_activity_selections(
-            session_id=_required(data, "session_id"),
+            session_id=session_id,
             activity_codes=_required_list(data, "activity_codes"),
             other_text=data.get("other_text"),
         )
@@ -411,8 +435,10 @@ def assessment_open_response():
 
     try:
         data = _payload()
+        session_id = _required(data, "session_id")
+        require_assessment_access(session_id)
         response = save_open_response(
-            session_id=_required(data, "session_id"),
+            session_id=session_id,
             prompt_code=str(_required(data, "prompt_code")),
             response_text=_required(data, "response_text"),
         )
@@ -435,7 +461,9 @@ def assessment_complete():
 
     try:
         data = _payload()
-        assessment = finalize_assessment(_required(data, "session_id"))
+        session_id = _required(data, "session_id")
+        require_assessment_access(session_id)
+        assessment = finalize_assessment(session_id)
     except Exception as exc:
         return _service_error_response(exc)
 
@@ -454,6 +482,7 @@ def api_results(session_id: uuid.UUID):
     """Recupera el resultado persistido de una sesión finalizada."""
 
     try:
+        require_assessment_access(session_id)
         assessment = get_assessment(session_id)
     except Exception as exc:
         return _service_error_response(exc)
