@@ -280,6 +280,25 @@ def _register_cli_commands(app: Flask) -> None:
         click.echo(f"Paquete generado en: {output_dir}")
         click.echo(f"release_hash_sha256: {release.release_hash_sha256}")
 
+    @app.cli.command("repro-status")
+    def repro_status_command() -> None:
+        """Muestra el entorno reproducible sin imprimir secretos."""
+
+        import json
+
+        from .services.experiment_service import (
+            _requirements_hash,
+            code_state,
+            runtime_environment,
+        )
+
+        payload = {
+            "code": code_state(),
+            "requirements_sha256": _requirements_hash(),
+            "environment": runtime_environment(),
+        }
+        click.echo(json.dumps(payload, ensure_ascii=False, indent=2))
+
     @app.cli.command("experiment-register")
     @click.option("--run-code", required=True)
     @click.option("--dataset-version", required=True)
