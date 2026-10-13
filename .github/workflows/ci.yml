@@ -1,0 +1,104 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - desarrollo-AI
+  pull_request:
+    branches:
+      - main
+      - desarrollo-AI
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: PostgreSQL + migrations + tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: riasec_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d riasec_db"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      APP_ENV: development
+      SECRET_KEY: ci-only-secret-key-not-for-production-0123456789
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/riasec_db
+      TEST_DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/riasec_test_db
+      COLLECTION_PHASE: pilot
+      AUTHORIZED_INSTITUTION_CODES: ""
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.14
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Create isolated test database
+        run: |
+          python - <<'PY'
+          import psycopg
+
+          connection = psycopg.connect(
+              "postgresql://postgres:postgres@localhost:5432/riasec_db",
+              autocommit=True,
+          )
+          try:
+              with connection.cursor() as cursor:
+                  cursor.execute(
+                      "SELECT 1 FROM pg_database WHERE datname = %s",
+                      ("riasec_test_db",),
+                  )
+                  if cursor.fetchone() is None:
+                      cursor.execute("CREATE DATABASE riasec_test_db")
+          finally:
+              connection.close()
+          PY
+
+      - name: Compile Python sources
+        run: python -m compileall -q app config.py run.py
+
+      - name: Repository hygiene
+        run: python scripts/check_repo_hygiene.py
+
+      - name: Apply database migrations
+        run: python -m flask --app run.py db upgrade
+
+      - name: Show migration head
+        run: python -m flask --app run.py db current
+
+      - name: Seed and verify scientific catalogs
+        run: |
+          python -m flask --app run.py seed-catalogs
+          python -m flask --app run.py scientific-status
+
+      - name: Run test suite
+        run: python -m pytest -v
