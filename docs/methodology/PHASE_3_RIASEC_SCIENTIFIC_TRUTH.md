@@ -1,41 +1,86 @@
 # Fase 3 — Verdad científica RIASEC
 
-## Diagnóstico
+## Resultado de la verificación externa autorizada
 
-La propuesta suministrada exige un inventario RIASEC adaptado y digitalizado, pero no identifica con precisión suficiente la versión exacta del instrumento, el manual de puntuación, la adaptación lingüística empleada ni la evidencia documental que permita afirmar que los 60 ítems actualmente codificados corresponden exactamente a una versión validada.
+El 2026-10-13 se contrastó la implementación local con documentación oficial de O*NET®.
 
-Por esa razón, el repositorio ya no debe tratar la implementación actual como verdad psicométrica confirmada. La implementación computacional se conserva para pruebas piloto, pero queda marcada como provisional y la recolección definitiva se bloquea hasta completar la verificación científica.
+Fuentes oficiales verificadas:
 
-## Controles implementados
+- O*NET Web Services — Short Form Questions (60-question desktop version):
+  https://services.onetcenter.org/reference/mpp/ip/ip_questions
+- O*NET Interest Profiler Manual — Version 1.0:
+  https://www.onetcenter.org/dl_files/IP_Manual.pdf
+- O*NET Career Exploration Tools Content License:
+  https://www.onetcenter.org/license_tools.html
 
-- Se añadió un protocolo reproducible para el cálculo y las variables objetivo.
-- Los seis puntajes R, I, A, S, E y C se definen como objetivos primarios.
-- profile_1, profile_2, profile_3, holland_code y tie_top1 se consideran salidas derivadas.
-- La regla computacional de puntuación se identifica como RIASEC_SCORING_PROVISIONAL_V1.
-- Se calcula SHA-256 del manifiesto local de los 60 ítems para detectar cualquier cambio futuro.
-- Se calcula SHA-256 de la especificación de puntuación.
-- La versión del instrumento registra verification_status: unverified, verified o rejected.
-- COLLECTION_PHASE=final queda bloqueada mientras verification_status no sea verified.
-- El porcentaje mostrado en resultados se etiqueta como porcentaje del máximo posible, nunca como percentil ni probabilidad.
+La documentación oficial confirma que la forma corta contiene 60 preguntas, cinco opciones de respuesta y seis áreas RIASEC. La lista oficial de preguntas fue revisada por O*NET el 2018-05-01.
 
-## Qué demuestra el hash y qué no
+El contenido local congelado del repositorio fue contrastado con la lista oficial española publicada por O*NET Web Services. El manifiesto verificado conserva el hash SHA-256:
 
-El hash local demuestra únicamente que el contenido del repositorio no cambió entre ejecuciones. No demuestra que los ítems coincidan con una fuente oficial externa, que la traducción sea autorizada ni que la adaptación posea validez psicométrica.
+`c30279b792fde80681f96f1c3108ccbedbcb7547dbdee29a90c2d48221433c43`
 
-## Bloqueador científico
+El mismo hash se almacena como `source_hash_sha256` y `local_content_hash_sha256`; cualquier cambio posterior del texto, orden o dimensión provoca una discrepancia detectable.
 
-Para pasar el instrumento a verified se necesita evidencia documental del instrumento exacto que se utilizará en la tesis. Debe verificarse como mínimo: nombre y versión exactos; fuente; idioma/adaptación; número y orden de ítems; asociación ítem-dimensión; escala de respuesta; regla de puntuación; licencia o permiso de uso; y, si aplica, evidencia de validación profesional mencionada en la propuesta.
+## Regla de puntuación
 
-No se debe cambiar verification_status a verified por decisión de software ni por coincidencia visual de los ítems.
+El manual oficial indica que la forma corta computarizada usa cinco opciones codificadas 0–4 y suma diez respuestas por cada dimensión RIASEC, produciendo un rango 0–40.
+
+La interfaz de O*NET Web Services entrega esas mismas cinco respuestas como valores 1–5. Por ello la transformación local:
+
+`response_raw - 1`
+
+es computacionalmente equivalente a la codificación 0–4 del manual antes de sumar por dimensión.
+
+La regla queda versionada como:
+
+`ONET_IP_SHORT_FORM_SCORING_V1`
+
+con un SHA-256 de la especificación para detectar modificaciones futuras.
+
+## Licencia y atribución
+
+Como la tesis integra el instrumento dentro de una plataforma mayor y añade funcionalidad propia, el repositorio documenta el uso bajo la `O*NET Tools Developer License`.
+
+La interfaz muestra atribución a O*NET Career Exploration Tools y al U.S. Department of Labor, Employment and Training Administration (USDOL/ETA), enlaza a la licencia y aclara que USDOL/ETA no ha aprobado, avalado ni probado las modificaciones de esta plataforma.
+
+La licencia exige validar los productos que incorporan contenido de las herramientas. Por ello la verificación de procedencia oficial no sustituye la validación profesional prevista en la propuesta de tesis.
+
+## Estado científico
+
+Se separan dos niveles:
+
+1. `source_verification_status`: la fuente, los 60 ítems, su orden, áreas, escala y regla computacional han sido contrastados con fuentes oficiales O*NET.
+2. `instrument_verification_status`: permanece `unverified` hasta documentar la validación profesional prevista en la propuesta para el producto aplicado a estudiantes de grado 11 de Tumaco.
+
+Esta separación evita afirmar que la equivalencia técnica con O*NET sustituye la validación profesional/local.
 
 ## Variable objetivo Y
 
-El objetivo primario para el modelado queda definido como el vector de seis puntajes RIASEC. Los códigos ordenados de dos o tres letras pueden derivarse después, preservando empates, pero no sustituyen los seis valores originales como referencia principal.
+El objetivo primario para el modelado es el vector completo de seis puntajes:
+
+`[score_R, score_I, score_A, score_S, score_E, score_C]`
+
+`profile_1`, `profile_2`, `profile_3`, `holland_code` y `tie_top1` son variables derivadas. No sustituyen los seis valores originales.
+
+La política de empates no fuerza una letra ganadora: si el primer puesto está empatado, no se genera un perfil principal único; si existe un empate que impide ordenar de forma inequívoca los tres primeros puestos, no se genera un código Holland de tres letras.
 
 ## Prevención de fuga de información
 
-Las respuestas IP01–IP60 que generan Y permanecen fuera de los predictores del dataset principal. El archivo maestro de auditoría puede conservarlas para trazabilidad, pero no debe usarse como matriz X del experimento principal.
+Las respuestas IP01–IP60 generan la referencia RIASEC Y, por lo que se excluyen de la matriz X del experimento principal. Pueden conservarse únicamente en el dataset maestro de auditoría para trazabilidad y reproducibilidad.
 
-## Criterio de cierre
+## Bloqueador restante
 
-La Fase 3 solo puede aprobarse cuando: (1) la fuente exacta del instrumento haya sido aportada o verificada con autorización expresa; (2) los 60 ítems, su mapeo y puntuación hayan sido contrastados; (3) la licencia/permiso de uso esté documentada; (4) verification_status pueda pasar justificadamente a verified; (5) migración, seed-catalogs, scientific-status y pytest hayan sido ejecutados sin errores.
+La propuesta de tesis establece que las etiquetas RIASEC serán verificadas por profesionales en psicología y orientación vocacional mediante pruebas validadas. Esa evidencia local/profesional todavía no está incorporada al repositorio.
+
+Por tanto, `COLLECTION_PHASE=final` continúa bloqueada mientras `instrument_verification_status != verified`.
+
+## Criterio de cierre de Fase 3
+
+La Fase 3 puede cerrarse cuando:
+
+1. la migración vigente esté aplicada;
+2. `seed-catalogs` verifique los hashes;
+3. `scientific-status` muestre la fuente oficial verificada;
+4. la suite `pytest` complete sin fallos;
+5. se documente la validación profesional/local prevista en la propuesta;
+6. solo después de esa evidencia se evalúe cambiar `instrument_verification_status` a `verified`.
