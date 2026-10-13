@@ -216,6 +216,7 @@ def build_ml_record(session: AssessmentSession) -> dict[str, Any]:
         "grade": session.grade,
         "municipality": session.municipality,
         "zone": session.zone,
+        "collection_phase": session.collection_phase,
         "has_career_in_mind": session.has_career_in_mind,
     }
     record.update(_interest_features(session))
@@ -247,6 +248,7 @@ def build_transformer_record(session: AssessmentSession) -> dict[str, Any]:
     return {
         "participant_code": session.participant.participant_code,
         "session_id": str(session.id),
+        "collection_phase": session.collection_phase,
         **texts,
         **_riasec_targets(session),
     }
