@@ -46,7 +46,10 @@
             <p class="eyebrow">Vista general</p>
             <h2 id="chart-title">Gráfico de tu perfil</h2>
         </div>
-        <p class="muted result-scale-note">Escala por dimensión: 0 a 40 puntos.</p>
+        <p class="muted result-scale-note">
+            Escala por dimensión: 0 a 40 puntos. El porcentaje mostrado es
+            porcentaje del máximo posible; no es percentil ni probabilidad.
+        </p>
     </div>
 
     <div class="profile-chart" aria-labelledby="chart-title">
@@ -62,12 +65,12 @@
             <div class="profile-chart__track" aria-hidden="true">
                 <span
                     class="profile-chart__fill"
-                    style="width: {{ dimension.percentage }}%;"
+                    style="width: {{ dimension.percentage_of_max }}% del máximo;"
                 ></span>
             </div>
             <div class="profile-chart__value">
-                <strong>{{ dimension.percentage }}%</strong>
-                <span>{{ dimension.score }}/40</span>
+                <strong>{{ dimension.score }}/40</strong>
+                <span>{{ dimension.percentage_of_max }}% del máximo</span>
             </div>
         </div>
         {% endfor %}
@@ -88,7 +91,7 @@
         <article class="primary-card primary-card--{{ dimension.code|lower }}">
             <div class="primary-card__topline">
                 <span class="primary-card__badge">{{ dimension.code }}</span>
-                <span class="primary-card__score">{{ dimension.percentage }}%</span>
+                <span class="primary-card__score">{{ dimension.score }}/40</span>
             </div>
             <h3>{{ dimension.name }}</h3>
             <p class="primary-card__tagline">{{ dimension.tagline }}</p>
@@ -134,14 +137,14 @@
                         <h3>{{ dimension.name }}</h3>
                     </div>
                 </div>
-                <strong>{{ dimension.percentage }}%</strong>
+                <strong>{{ dimension.score }}/40</strong>
             </div>
             <progress
                 max="100"
-                value="{{ dimension.percentage }}"
-                aria-label="{{ dimension.name }}: {{ dimension.percentage }} por ciento"
+                value="{{ dimension.percentage_of_max }}"
+                aria-label="{{ dimension.name }}: {{ dimension.percentage_of_max }} por ciento del máximo posible"
             >
-                {{ dimension.percentage }}%
+                {{ dimension.percentage_of_max }}%
             </progress>
             <p class="muted">{{ dimension.score }} de 40 puntos.</p>
             <p>{{ dimension.description }}</p>
