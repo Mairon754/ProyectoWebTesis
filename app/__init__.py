@@ -116,6 +116,58 @@ def _register_cli_commands(app: Flask) -> None:
         click.echo(f"target_protocol_version: {TARGET_PROTOCOL_VERSION}")
 
 
+    @app.cli.command("privacy-purge-participant")
+    @click.option("--participant-code", required=True)
+    @click.option(
+        "--confirm",
+        required=True,
+        help="Debe repetir exactamente el código del participante.",
+    )
+    def privacy_purge_participant_command(
+        participant_code: str,
+        confirm: str,
+    ) -> None:
+        """Elimina de la base activa los datos ligados a un participante."""
+
+        normalized = participant_code.strip().upper()
+        if confirm.strip().upper() != normalized:
+            raise click.ClickException(
+                "--confirm debe coincidir exactamente con --participant-code."
+            )
+
+        from .services.assessment_service import (
+            AssessmentServiceError,
+            purge_participant_data,
+        )
+
+        try:
+            result = purge_participant_data(normalized)
+        except AssessmentServiceError as exc:
+            raise click.ClickException(str(exc)) from exc
+        except Exception as exc:
+            app.logger.exception("Falló la eliminación controlada de participante.")
+            raise click.ClickException(
+                "No fue posible eliminar los datos del participante."
+            ) from exc
+
+        click.echo(
+            "Datos eliminados de la base activa para "
+            f"{result['participant_code']}."
+        )
+        click.echo(
+            "Sesiones eliminadas: "
+            f"{result['assessment_sessions_deleted']}"
+        )
+        click.echo(
+            "Consentimientos eliminados: "
+            f"{result['consent_records_deleted']}"
+        )
+        click.echo(
+            "IMPORTANTE: revisar también backups/snapshots según el "
+            "procedimiento institucional de retención."
+        )
+
+
 def _register_security_headers(app: Flask) -> None:
     """Aplica una línea base de cabeceras de seguridad."""
 
