@@ -9,6 +9,7 @@ Aquí se validan reglas del dominio que no pertenecen a los modelos ni al HTML.
 
 from __future__ import annotations
 
+import re
 import secrets
 import uuid
 from collections.abc import Iterable, Mapping
@@ -329,6 +330,8 @@ def create_assessment(
     )
 
     is_minor = normalized_demographics["age"] < 18
+    cleaned_guardian_reference = _clean_text(guardian_consent_reference)
+
     if is_minor:
         if guardian_consent_required is not True:
             raise AssessmentValidationError(
@@ -339,15 +342,27 @@ def create_assessment(
             raise AssessmentValidationError(
                 "Los participantes menores de edad requieren asentimiento propio."
             )
-        if not _clean_text(guardian_consent_reference):
+        if not cleaned_guardian_reference:
             raise AssessmentValidationError(
                 "Falta la referencia verificable del consentimiento del acudiente."
+            )
+        if not re.fullmatch(
+            r"[A-Za-z0-9_-]{6,100}",
+            cleaned_guardian_reference,
+        ):
+            raise AssessmentValidationError(
+                "La referencia del consentimiento del acudiente debe contener "
+                "solo letras, números, guion o guion bajo."
             )
     else:
         if guardian_consent_required:
             raise AssessmentValidationError(
                 "No debe marcarse consentimiento de acudiente para participantes "
                 "de 18 años o más."
+            )
+        if cleaned_guardian_reference:
+            raise AssessmentValidationError(
+                "Un participante adulto no debe registrar referencia de acudiente."
             )
         if assent_accepted not in {None, True}:
             raise AssessmentValidationError(
@@ -364,7 +379,7 @@ def create_assessment(
             consent_accepted=True,
             assent_accepted=assent_accepted,
             guardian_consent_required=guardian_consent_required,
-            guardian_consent_reference=_clean_text(guardian_consent_reference),
+            guardian_consent_reference=cleaned_guardian_reference,
             collection_method=collection_method,
         )
         db.session.add(consent)
