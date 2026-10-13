@@ -30,7 +30,9 @@ from app.models import (
 )
 from app.services.riasec_protocol import (
     INSTRUMENT_VERIFICATION_UNVERIFIED,
+    OFFICIAL_SOURCE_MANIFEST_SHA256,
     SCORING_SPEC_SHA256,
+    SOURCE_VERIFICATION_STATUS,
     instrument_content_sha256,
 )
 
@@ -273,7 +275,7 @@ def _seed_instrument(summary: dict[str, int]) -> InstrumentVersion:
             source_url=(
                 "https://services.onetcenter.org/reference/mpp/ip/ip_questions"
             ),
-            license_name="O*NET Career Exploration Tools Content License",
+            license_name="O*NET Tools Developer License",
             license_url="https://www.onetcenter.org/license_tools.html",
         )
         db.session.add(instrument)
@@ -298,6 +300,11 @@ def _seed_instrument(summary: dict[str, int]) -> InstrumentVersion:
     ).scalar_one_or_none()
 
     local_content_hash = instrument_content_sha256(ONET_ITEMS)
+    if local_content_hash != OFFICIAL_SOURCE_MANIFEST_SHA256:
+        raise CatalogSeedError(
+            "El manifiesto local del instrumento no coincide con la versión "
+            "oficial O*NET previamente verificada."
+        )
 
     if version is None:
         version = InstrumentVersion(
@@ -306,6 +313,7 @@ def _seed_instrument(summary: dict[str, int]) -> InstrumentVersion:
             language="es",
             total_items=60,
             retrieval_date=date(2026, 9, 8),
+            source_hash_sha256=OFFICIAL_SOURCE_MANIFEST_SHA256,
             local_content_hash_sha256=local_content_hash,
             scoring_spec_sha256=SCORING_SPEC_SHA256,
             verification_status=INSTRUMENT_VERIFICATION_UNVERIFIED,
@@ -329,6 +337,15 @@ def _seed_instrument(summary: dict[str, int]) -> InstrumentVersion:
             actual=version.total_items,
             expected=60,
         )
+        if version.source_hash_sha256 is None:
+            version.source_hash_sha256 = OFFICIAL_SOURCE_MANIFEST_SHA256
+        else:
+            _assert_equal(
+                label="InstrumentVersion.source_hash_sha256",
+                actual=version.source_hash_sha256,
+                expected=OFFICIAL_SOURCE_MANIFEST_SHA256,
+            )
+
         if version.local_content_hash_sha256 is None:
             version.local_content_hash_sha256 = local_content_hash
         else:
@@ -580,6 +597,12 @@ def get_catalog_status() -> dict[str, Any]:
         "expected_minimum": expected,
         "instrument_verification_status": (
             version.verification_status if version is not None else None
+        ),
+        "source_verification_status": (
+            SOURCE_VERIFICATION_STATUS if version is not None else None
+        ),
+        "instrument_source_hash_sha256": (
+            version.source_hash_sha256 if version is not None else None
         ),
         "instrument_local_content_hash_sha256": (
             version.local_content_hash_sha256 if version is not None else None
