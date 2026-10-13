@@ -24,6 +24,7 @@ from flask import (
 from sqlalchemy import text
 
 from app.extensions import db
+from app.services.access_service import bind_assessment_to_browser
 from app.services.assessment_service import (
     CURRENT_CONSENT_VERSION,
     AssessmentServiceError,
@@ -220,7 +221,7 @@ def demographics():
             )
 
         session.pop("pending_consent", None)
-        session["active_assessment_id"] = str(assessment.id)
+        bind_assessment_to_browser(assessment.id)
 
         return redirect(
             url_for(
