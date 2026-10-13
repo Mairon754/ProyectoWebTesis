@@ -113,6 +113,19 @@ class InstrumentVersion(db.Model):
         db.String(64),
         nullable=True,
     )
+    local_content_hash_sha256 = db.Column(
+        db.String(64),
+        nullable=True,
+    )
+    scoring_spec_sha256 = db.Column(
+        db.String(64),
+        nullable=True,
+    )
+    verification_status = db.Column(
+        db.String(20),
+        nullable=False,
+        default="unverified",
+    )
     is_active = db.Column(
         db.Boolean,
         nullable=False,
@@ -141,6 +154,10 @@ class InstrumentVersion(db.Model):
         db.CheckConstraint(
             "total_items > 0",
             name="ck_instrument_versions_total_items",
+        ),
+        db.CheckConstraint(
+            "verification_status IN ('unverified', 'verified', 'rejected')",
+            name="ck_instrument_versions_verification_status",
         ),
     )
 
