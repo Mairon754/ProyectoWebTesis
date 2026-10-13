@@ -12,6 +12,7 @@ from .assessment import (
     SessionSubject,
     Subject,
 )
+from .dataset import DatasetRelease, DatasetReleaseMember
 from .instrument import Instrument, InstrumentVersion, InterestItem, ONetItem
 from .participant import ConsentRecord, Participant
 from .responses import InterestResponse, ONetResponse, OpenResponse
@@ -23,6 +24,8 @@ __all__ = [
     "AssessmentSession",
     "ConsentRecord",
     "DataQualityReview",
+    "DatasetRelease",
+    "DatasetReleaseMember",
     "Instrument",
     "InstrumentVersion",
     "InterestItem",
