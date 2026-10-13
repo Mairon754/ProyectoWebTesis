@@ -8,9 +8,11 @@ presentación.
 
 Regla metodológica de este proyecto
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Las 60 respuestas oficiales O*NET producen la variable objetivo (Y). Por ello
-este servicio calcula el resultado desde `ONetResponse` y nunca utiliza las
-variables complementarias G01-G12, materias, actividades o textos abiertos.
+Las 60 respuestas del instrumento local configurado producen provisionalmente
+la variable objetivo (Y). Este servicio calcula el resultado desde
+`ONetResponse` y nunca utiliza G01-G12, materias, actividades o textos abiertos.
+La correspondencia exacta con una fuente psicométrica externa permanece sujeta
+a la verificación científica documentada de la versión del instrumento.
 """
 
 from __future__ import annotations
@@ -181,11 +183,11 @@ def _raw_value(response: Any) -> int:
 
     if isinstance(raw, bool) or not isinstance(raw, int):
         raise RiasecScoringError(
-            "Cada respuesta O*NET debe contener `response_raw` entero."
+            "Cada respuesta del instrumento debe contener `response_raw` entero."
         )
     if not MIN_RAW_RESPONSE <= raw <= MAX_RAW_RESPONSE:
         raise RiasecScoringError(
-            f"Respuesta O*NET fuera de rango: {raw}. Debe estar entre 1 y 5."
+            f"Respuesta del instrumento fuera de rango: {raw}. Debe estar entre 1 y 5."
         )
     return raw
 
@@ -203,7 +205,7 @@ def _item_area(response: Any) -> str:
 
     if item is None:
         raise RiasecScoringError(
-            "La respuesta O*NET no tiene asociado su ítem."
+            "La respuesta del instrumento no tiene asociado su ítem."
         )
 
     area = getattr(item, "area", None)
@@ -234,7 +236,7 @@ def _item_identity(response: Any) -> str:
             return f"index:{item_index}"
 
     raise RiasecScoringError(
-        "No fue posible identificar el ítem de una respuesta O*NET."
+        "No fue posible identificar el ítem de una respuesta del instrumento."
     )
 
 
@@ -275,7 +277,7 @@ def validate_responses(
     if require_complete:
         if len(materialized) != EXPECTED_TOTAL_ITEMS:
             raise RiasecScoringError(
-                "La evaluación O*NET debe contener exactamente "
+                "La evaluación debe contener exactamente "
                 f"{EXPECTED_TOTAL_ITEMS} respuestas; se recibieron "
                 f"{len(materialized)}."
             )
