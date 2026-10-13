@@ -121,6 +121,7 @@ def test_research_dataset_excludes_onet_items_from_ml_predictors(assessment_buil
 
     assert len(rows) == 1
     assert rows[0]["participant_code"] == assessment.participant.participant_code
+    assert "session_id" not in rows[0]
     assert not any(key.lower().startswith("ip") for key in rows[0])
     assert "score_r" in rows[0]
     assert "g01" in rows[0]
@@ -339,3 +340,19 @@ def test_seeded_instrument_has_local_hash_but_remains_unverified(
     assert version.scoring_spec_sha256 == SCORING_SPEC_SHA256
     assert version.instrument.license_name == "O*NET Tools Developer License"
     assert version.verification_status == "unverified"
+
+
+
+def test_csv_export_neutralizes_formula_like_text():
+    from app.services.dataset_service import export_records_to_csv
+
+    content = export_records_to_csv(
+        [
+            {
+                "participant_code": "RIA-TEST",
+                "t01_actividad_libre": "=HYPERLINK("http://example.test","x")",
+            }
+        ]
+    )
+
+    assert "'=HYPERLINK" in content
