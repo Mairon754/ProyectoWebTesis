@@ -23,15 +23,19 @@ from typing import Any
 
 from app.extensions import db
 from app.models import AssessmentSession, RiasecResult
+from app.services.riasec_protocol import (
+    RIASEC_CODES,
+    SCORING_SPEC_SHA256,
+    SCORING_VERSION,
+    TARGET_PROTOCOL_VERSION,
+)
 
-RIASEC_CODES: tuple[str, ...] = ("R", "I", "A", "S", "E", "C")
 EXPECTED_TOTAL_ITEMS = 60
 EXPECTED_ITEMS_PER_DIMENSION = 10
 MIN_RAW_RESPONSE = 1
 MAX_RAW_RESPONSE = 5
 MIN_DIMENSION_SCORE = 0
 MAX_DIMENSION_SCORE = 40
-SCORING_VERSION = "RIASEC_SCORING_V1"
 
 RIASEC_DIMENSION_INFO: dict[str, dict[str, Any]] = {
     "R": {
@@ -436,6 +440,8 @@ def build_result_payload(responses: Iterable[Any]) -> dict[str, Any]:
         "scores": dict(scores),
         **profiles,
         "scoring_version": SCORING_VERSION,
+        "scoring_spec_sha256": SCORING_SPEC_SHA256,
+        "target_protocol_version": TARGET_PROTOCOL_VERSION,
     }
 
 
@@ -537,7 +543,9 @@ def build_result_interpretation(result: RiasecResult) -> dict[str, Any]:
                 "name": info["name"],
                 "tagline": info["tagline"],
                 "score": score,
-                "percentage": round((score / MAX_DIMENSION_SCORE) * 100),
+                "percentage_of_max": round(
+                    (score / MAX_DIMENSION_SCORE) * 100
+                ),
                 "rank": rank_by_score[score],
                 "is_primary": code in primary_codes,
                 "description": info["description"],
@@ -642,6 +650,8 @@ def serialize_persisted_result(
         "tie_top1": result.tie_top1,
         "top1_candidates": list(result.top1_candidates or []),
         "scoring_version": result.scoring_version,
+        "scoring_spec_sha256": SCORING_SPEC_SHA256,
+        "target_protocol_version": TARGET_PROTOCOL_VERSION,
         "calculated_at": (
             result.calculated_at.isoformat()
             if result.calculated_at is not None
