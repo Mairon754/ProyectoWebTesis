@@ -33,6 +33,10 @@ class BaseConfig:
     SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+    # Fase de recolección: "pilot" mantiene pruebas controladas; "final" activa
+    # los criterios estrictos de la muestra principal de grado 11.
+    COLLECTION_PHASE = os.getenv("COLLECTION_PHASE", "pilot").strip().lower()
+
     SESSION_COOKIE_NAME = "riasec_session"
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
@@ -123,6 +127,11 @@ def validate_config(config_name: str, config_class: type[BaseConfig]) -> None:
         variable = "TEST_DATABASE_URL" if config_name == "testing" else "DATABASE_URL"
         raise RuntimeError(
             f"Falta {variable}. Defínela como variable de entorno o en un .env local."
+        )
+
+    if config_class.COLLECTION_PHASE not in {"pilot", "final"}:
+        raise RuntimeError(
+            "COLLECTION_PHASE debe ser 'pilot' o 'final'."
         )
 
     if config_name != "production":
