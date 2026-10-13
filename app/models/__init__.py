@@ -15,6 +15,7 @@ from .assessment import (
 from .instrument import Instrument, InstrumentVersion, InterestItem, ONetItem
 from .participant import ConsentRecord, Participant
 from .responses import InterestResponse, ONetResponse, OpenResponse
+from .research import ResearchAuditEvent
 from .riasec import RiasecDimension, RiasecResult
 
 __all__ = [
@@ -30,6 +31,7 @@ __all__ = [
     "ONetResponse",
     "OpenResponse",
     "Participant",
+    "ResearchAuditEvent",
     "RiasecDimension",
     "RiasecResult",
     "SessionActivity",
