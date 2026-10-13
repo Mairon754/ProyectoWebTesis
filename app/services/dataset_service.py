@@ -45,6 +45,24 @@ ML_TARGET_COLUMNS: tuple[str, ...] = (
     *DERIVED_TARGET_COLUMNS,
 )
 
+# Contrato científico primario para comparar arquitecturas bajo la misma X.
+# El identificador y la fase son metadatos; el predictor experimental es el
+# texto combinado T01-T03. Los seis puntajes RIASEC son la referencia Y
+# primaria y las categorías ordenadas se conservan como derivados.
+PRIMARY_EXPERIMENT_CONTRACT_VERSION = "VOC_RIASEC_TEXT_X_V1"
+PRIMARY_EXPERIMENT_PREDICTORS: tuple[str, ...] = ("texto_combinado",)
+PRIMARY_EXPERIMENT_METADATA: tuple[str, ...] = (
+    "participant_code",
+    "collection_phase",
+)
+PRIMARY_EXPERIMENT_DERIVED_TARGETS: tuple[str, ...] = (
+    "profile_1",
+    "profile_2",
+    "profile_3",
+    "holland_code",
+    "tie_top1",
+)
+
 # Variables cuya información puede revelar directamente la decisión profesional
 # y que, por diseño metodológico, no forman parte del modelo principal.
 SUBJECT_CODES: tuple[str, ...] = (
@@ -234,6 +252,37 @@ def build_ml_record(session: AssessmentSession) -> dict[str, Any]:
         )
 
     return record
+
+
+def build_primary_experiment_record(
+    session: AssessmentSession,
+) -> dict[str, Any]:
+    """Construye el registro congelable del experimento comparativo principal.
+
+    X queda limitada al texto libre combinado para que todas las arquitecturas
+    reciban la misma evidencia semántica. Las respuestas IP01-IP60, los scores
+    RIASEC y las variables contextuales no entran a X.
+    """
+
+    _require_session_ready(session)
+    texts = _open_text_features(session)
+    combined = texts.get("texto_combinado")
+    if not combined or not combined.strip():
+        raise DatasetServiceError(
+            "La sesión no contiene texto abierto utilizable como predictor."
+        )
+
+    targets = _riasec_targets(session)
+    return {
+        "participant_code": session.participant.participant_code,
+        "collection_phase": session.collection_phase,
+        "texto_combinado": combined,
+        **{column: targets[column] for column in PRIMARY_TARGET_COLUMNS},
+        **{
+            column: targets[column]
+            for column in PRIMARY_EXPERIMENT_DERIVED_TARGETS
+        },
+    }
 
 
 def build_transformer_record(session: AssessmentSession) -> dict[str, Any]:
