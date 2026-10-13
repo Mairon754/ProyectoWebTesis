@@ -15,6 +15,7 @@ from collections.abc import Iterable, Mapping
 from datetime import datetime, timezone
 from typing import Any
 
+from flask import current_app
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 
@@ -187,8 +188,17 @@ def _get_instrument_version(code: str) -> InstrumentVersion:
     return version
 
 
-def _validate_demographics(data: Mapping[str, Any]) -> dict[str, Any]:
-    """Valida y normaliza la información demográfica de una sesión."""
+def _validate_demographics(
+    data: Mapping[str, Any],
+    *,
+    collection_phase: str,
+    authorized_institution_codes: set[str],
+) -> dict[str, Any]:
+    """Valida y normaliza la información demográfica de una sesión.
+
+    En la recolección final se aplican los criterios aprobados para la muestra:
+    grado 11, San Andrés de Tumaco e institución previamente autorizada.
+    """
 
     try:
         age = int(data["age"])
@@ -205,6 +215,26 @@ def _validate_demographics(data: Mapping[str, Any]) -> dict[str, Any]:
 
     institution_code = _clean_text(data.get("institution_code"), required=True)
     municipality = _clean_text(data.get("municipality"), required=True)
+    assert institution_code is not None
+    assert municipality is not None
+    institution_code = institution_code.upper()
+
+    if collection_phase == "final":
+        if grade != 11:
+            raise AssessmentValidationError(
+                "La recolección final está restringida a estudiantes de grado 11."
+            )
+        if municipality.strip().casefold() not in {
+            "san andrés de tumaco".casefold(),
+            "tumaco".casefold(),
+        }:
+            raise AssessmentValidationError(
+                "La recolección final está restringida a San Andrés de Tumaco."
+            )
+        if institution_code not in authorized_institution_codes:
+            raise AssessmentValidationError(
+                "La institución no está autorizada para la recolección final."
+            )
 
     zone = _clean_text(data.get("zone"), required=True)
     assert zone is not None
@@ -294,7 +324,51 @@ def create_assessment(
     if collection_method not in {"digital", "paper", "institutional"}:
         raise AssessmentValidationError("Método de consentimiento no válido.")
 
-    normalized_demographics = _validate_demographics(demographics)
+    collection_phase = str(
+        current_app.config.get("COLLECTION_PHASE", "pilot")
+    ).strip().lower()
+    if collection_phase not in {"pilot", "final"}:
+        raise AssessmentValidationError(
+            "La fase de recolección configurada no es válida."
+        )
+
+    authorized_institution_codes = {
+        str(code).strip().upper()
+        for code in current_app.config.get("AUTHORIZED_INSTITUTION_CODES", ())
+        if str(code).strip()
+    }
+
+    normalized_demographics = _validate_demographics(
+        demographics,
+        collection_phase=collection_phase,
+        authorized_institution_codes=authorized_institution_codes,
+    )
+
+    is_minor = normalized_demographics["age"] < 18
+    if is_minor:
+        if guardian_consent_required is not True:
+            raise AssessmentValidationError(
+                "Los participantes menores de edad requieren consentimiento "
+                "previo del acudiente."
+            )
+        if assent_accepted is not True:
+            raise AssessmentValidationError(
+                "Los participantes menores de edad requieren asentimiento propio."
+            )
+        if not _clean_text(guardian_consent_reference):
+            raise AssessmentValidationError(
+                "Falta la referencia verificable del consentimiento del acudiente."
+            )
+    else:
+        if guardian_consent_required:
+            raise AssessmentValidationError(
+                "No debe marcarse consentimiento de acudiente para participantes "
+                "de 18 años o más."
+            )
+        if assent_accepted not in {None, True}:
+            raise AssessmentValidationError(
+                "El consentimiento del participante adulto no es válido."
+            )
 
     try:
         participant = _get_or_create_participant(participant_code)
@@ -319,6 +393,7 @@ def create_assessment(
             status="in_progress",
             current_stage="onet",
             current_item_index=1,
+            collection_phase=collection_phase,
             **normalized_demographics,
         )
         db.session.add(assessment)
