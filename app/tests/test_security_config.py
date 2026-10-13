@@ -13,6 +13,7 @@ def _valid_researcher_account() -> list[dict[str, str]]:
             "username": "investigador",
             "display_name": "Investigador",
             "password_hash": "scrypt:32768:8:1$hash-de-prueba-no-placeholder",
+            "role": "data_manager",
         }
     ]
 
