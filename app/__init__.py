@@ -100,6 +100,14 @@ def _register_cli_commands(app: Flask) -> None:
             f"{status['instrument_verification_status']}"
         )
         click.echo(
+            "source_verification_status: "
+            f"{status['source_verification_status']}"
+        )
+        click.echo(
+            "instrument_source_hash_sha256: "
+            f"{status['instrument_source_hash_sha256']}"
+        )
+        click.echo(
             "instrument_local_content_hash_sha256: "
             f"{status['instrument_local_content_hash_sha256']}"
         )
