@@ -24,6 +24,7 @@ class AutomaticQualityCheck(db.Model):
         nullable=False,
     )
     protocol_version = db.Column(db.String(60), nullable=False)
+    input_hash_sha256 = db.Column(db.String(64), nullable=False)
     status = db.Column(db.String(15), nullable=False)
     blocker_count = db.Column(db.Integer, nullable=False, default=0)
     warning_count = db.Column(db.Integer, nullable=False, default=0)
@@ -39,11 +40,6 @@ class AutomaticQualityCheck(db.Model):
     )
 
     __table_args__ = (
-        db.UniqueConstraint(
-            "session_id",
-            "protocol_version",
-            name="uq_automatic_quality_checks_session_protocol",
-        ),
         db.CheckConstraint(
             "status IN ('passed', 'blocked')",
             name="ck_automatic_quality_checks_status",
@@ -59,4 +55,10 @@ class AutomaticQualityCheck(db.Model):
         db.Index("ix_automatic_quality_checks_session_id", "session_id"),
         db.Index("ix_automatic_quality_checks_status", "status"),
         db.Index("ix_automatic_quality_checks_protocol", "protocol_version"),
+        db.Index(
+            "ix_automatic_quality_checks_session_protocol_created",
+            "session_id",
+            "protocol_version",
+            "created_at",
+        ),
     )
