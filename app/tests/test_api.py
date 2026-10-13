@@ -143,6 +143,8 @@ def test_complementary_input_endpoints(client, db_context, demographics):
 
 def test_complete_and_results_api(client, assessment_builder):
     assessment = assessment_builder(fill=True, finalize=False, onet_raw=4)
+    with client.session_transaction() as flask_session:
+        flask_session["active_assessment_id"] = str(assessment.id)
 
     completed = client.post(
         "/api/assessment/complete",
@@ -207,3 +209,79 @@ def test_research_module_requires_login_and_exports_csv(
     assert exported.mimetype == "text/csv"
     assert b"participant_code" in exported.data
     assert b"score_r" in exported.data
+
+
+
+def test_assessment_uuid_alone_does_not_grant_access(
+    app,
+    client,
+    db_context,
+    demographics,
+):
+    start = client.post("/api/assessment/start", json=_start_payload(demographics))
+    assert start.status_code == 201
+    data = start.get_json()["data"]
+    session_id = data["session_id"]
+    access_token = data["access_token"]
+
+    stranger = app.test_client()
+    denied = stranger.get(f"/api/assessment?session_id={session_id}")
+    allowed = stranger.get(
+        f"/api/assessment?session_id={session_id}",
+        headers={data["access_header"]: access_token},
+    )
+
+    assert denied.status_code == 403
+    assert allowed.status_code == 200
+
+
+def test_api_start_does_not_accept_client_selected_participant_code(
+    client,
+    db_context,
+    demographics,
+):
+    payload = _start_payload(demographics)
+    payload["participant_code"] = "RIA-FORZADO"
+
+    response = client.post("/api/assessment/start", json=payload)
+
+    assert response.status_code == 201
+    assert response.get_json()["data"]["participant_code"] != "RIA-FORZADO"
+
+
+def test_viewer_cannot_export_master_dataset(
+    app,
+    db_context,
+):
+    from werkzeug.security import generate_password_hash
+
+    previous_accounts = app.config["RESEARCHER_ACCOUNTS"]
+    app.config["RESEARCHER_ACCOUNTS"] = [
+        {
+            "username": "solo_lectura",
+            "display_name": "Solo lectura",
+            "password_hash": generate_password_hash("ClavePrueba123!"),
+            "role": "viewer",
+        }
+    ]
+
+    try:
+        viewer = app.test_client()
+        viewer.get("/investigacion/login")
+        with viewer.session_transaction() as flask_session:
+            csrf_token = flask_session["research_csrf_token"]
+
+        login = viewer.post(
+            "/investigacion/login",
+            data={
+                "csrf_token": csrf_token,
+                "username": "solo_lectura",
+                "password": "ClavePrueba123!",
+            },
+        )
+        assert login.status_code == 302
+
+        denied = viewer.get("/investigacion/datasets/export/master/csv")
+        assert denied.status_code == 403
+    finally:
+        app.config["RESEARCHER_ACCOUNTS"] = previous_accounts
