@@ -13,6 +13,7 @@ from .assessment import (
     Subject,
 )
 from .dataset import DatasetRelease, DatasetReleaseMember
+from .experiment import ExperimentRun
 from .instrument import Instrument, InstrumentVersion, InterestItem, ONetItem
 from .participant import ConsentRecord, Participant
 from .quality import AutomaticQualityCheck
@@ -28,6 +29,7 @@ __all__ = [
     "DataQualityReview",
     "DatasetRelease",
     "DatasetReleaseMember",
+    "ExperimentRun",
     "Instrument",
     "InstrumentVersion",
     "InterestItem",
