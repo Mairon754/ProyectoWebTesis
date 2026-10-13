@@ -20,6 +20,7 @@ class DatasetRelease(db.Model):
     id = db.Column(db.Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
     version = db.Column(db.String(40), nullable=False, unique=True)
     status = db.Column(db.String(15), nullable=False, default="frozen")
+    collection_phase = db.Column(db.String(10), nullable=False)
     contract_version = db.Column(db.String(60), nullable=False)
     target_protocol_version = db.Column(db.String(80), nullable=False)
     split_protocol_version = db.Column(db.String(80), nullable=False)
@@ -53,6 +54,10 @@ class DatasetRelease(db.Model):
             name="ck_dataset_releases_status_frozen",
         ),
         db.CheckConstraint(
+            "collection_phase IN ('pilot', 'final')",
+            name="ck_dataset_releases_collection_phase",
+        ),
+        db.CheckConstraint(
             "record_count > 0",
             name="ck_dataset_releases_record_count_positive",
         ),
@@ -74,33 +79,21 @@ class DatasetReleaseMember(db.Model):
         db.ForeignKey("dataset_releases.id", ondelete="CASCADE"),
         nullable=False,
     )
-    session_id = db.Column(
-        db.Uuid(as_uuid=True),
-        db.ForeignKey("assessment_sessions.id", ondelete="RESTRICT"),
-        nullable=False,
-    )
-    participant_id = db.Column(
-        db.Uuid(as_uuid=True),
-        db.ForeignKey("participants.id", ondelete="RESTRICT"),
-        nullable=False,
-    )
     participant_code = db.Column(db.String(20), nullable=False)
     split_name = db.Column(db.String(12), nullable=False)
     record_hash_sha256 = db.Column(db.String(64), nullable=False)
+    record_json = db.Column(db.JSON, nullable=False)
     created_at = db.Column(
         db.DateTime(timezone=True), nullable=False, default=utcnow
     )
 
     release = db.relationship("DatasetRelease", back_populates="members")
-    assessment_session = db.relationship("AssessmentSession")
-    participant = db.relationship("Participant")
 
     __table_args__ = (
         db.UniqueConstraint(
-            "release_id", "session_id", name="uq_dataset_release_session"
-        ),
-        db.UniqueConstraint(
-            "release_id", "participant_id", name="uq_dataset_release_participant"
+            "release_id",
+            "participant_code",
+            name="uq_dataset_release_participant_code",
         ),
         db.CheckConstraint(
             "split_name IN ('train', 'validation', 'test')",
