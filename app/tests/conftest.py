@@ -55,6 +55,7 @@ def app():
                 "username": "investigador",
                 "display_name": "Investigador de prueba",
                 "password_hash": generate_password_hash("ClavePrueba123!"),
+                "role": "data_manager",
             }
         ]
     )
