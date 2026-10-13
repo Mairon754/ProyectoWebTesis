@@ -211,6 +211,15 @@ Detalles adicionales: `docs/ci/CI_AND_VALIDATION.md`.
 - `docs/reproducibility/` — reproducibilidad experimental.
 - `docs/ci/` — integración continua y procedimiento de validación.
 
+## Auditoría final para jurado
+
+La auditoría de trazabilidad entre D01 y el repositorio se encuentra en:
+
+- `docs/audit/PHASE_10_FINAL_JURY_AUDIT.md`
+- `docs/audit/D01_REPO_TRACEABILITY_MATRIX.md`
+
+La auditoría distingue entre infraestructura técnicamente implementada y productos científicos todavía pendientes. Mientras existan bloqueadores críticos, el repositorio no debe presentarse como tesis experimental finalizada.
+
 ## Restricciones vigentes
 
 No debe activarse `COLLECTION_PHASE=final` mientras `instrument_verification_status` permanezca `unverified`.
