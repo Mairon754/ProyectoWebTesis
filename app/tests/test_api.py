@@ -14,7 +14,9 @@ def _start_payload(demographics):
             "accepted": True,
             "data_authorization": True,
             "assent_accepted": True,
-            "guardian_consent_required": False,
+            "guardian_consent_required": True,
+            "guardian_consent_reference": "GUARD-TEST-001",
+            "collection_method": "institutional",
         },
     }
 
