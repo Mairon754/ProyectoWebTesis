@@ -130,10 +130,10 @@ El paquete se crea en `exports/dataset_releases/<version>/`, directorio excluido
 
 - `manifest.json`;
 - `data_dictionary.json`;
-- `all.csv`;
-- `train.csv`;
-- `validation.csv`;
-- `test.csv`.
+- `all.csv` y `all.json`;
+- `train.csv` y `train.json`;
+- `validation.csv` y `validation.json`;
+- `test.csv` y `test.json`.
 
 ## Bloqueadores para el dataset definitivo
 
