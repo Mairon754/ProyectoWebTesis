@@ -611,7 +611,16 @@ def get_catalog_status() -> dict[str, Any]:
             version.verification_status if version is not None else None
         ),
         "source_verification_status": (
-            SOURCE_VERIFICATION_STATUS if version is not None else None
+            SOURCE_VERIFICATION_STATUS
+            if (
+                version is not None
+                and version.source_hash_sha256 == OFFICIAL_SOURCE_MANIFEST_SHA256
+                and version.local_content_hash_sha256
+                == OFFICIAL_SOURCE_MANIFEST_SHA256
+            )
+            else "pending_database_sync"
+            if version is not None
+            else None
         ),
         "instrument_source_hash_sha256": (
             version.source_hash_sha256 if version is not None else None
