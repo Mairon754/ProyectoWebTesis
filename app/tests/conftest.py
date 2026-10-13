@@ -77,14 +77,16 @@ def db_context(app):
     """Contexto limpio preservando catálogos sembrados."""
 
     from app.extensions import db
-    from app.models import DatasetRelease, Participant
+    from app.models import DatasetRelease, ExperimentRun, Participant
 
     with app.app_context():
+        db.session.execute(delete(ExperimentRun))
         db.session.execute(delete(DatasetRelease))
         db.session.execute(delete(Participant))
         db.session.commit()
         yield
         db.session.rollback()
+        db.session.execute(delete(ExperimentRun))
         db.session.execute(delete(DatasetRelease))
         db.session.execute(delete(Participant))
         db.session.commit()
