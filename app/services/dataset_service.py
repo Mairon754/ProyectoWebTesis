@@ -29,6 +29,11 @@ from app.models import (
     SessionActivity,
     SessionSubject,
 )
+from app.services.riasec_protocol import (
+    DERIVED_TARGET_COLUMNS,
+    PRIMARY_TARGET_COLUMNS,
+    TARGET_PROTOCOL_VERSION,
+)
 
 
 class DatasetServiceError(ValueError):
@@ -36,17 +41,8 @@ class DatasetServiceError(ValueError):
 
 
 ML_TARGET_COLUMNS: tuple[str, ...] = (
-    "score_r",
-    "score_i",
-    "score_a",
-    "score_s",
-    "score_e",
-    "score_c",
-    "profile_1",
-    "profile_2",
-    "profile_3",
-    "holland_code",
-    "tie_top1",
+    *PRIMARY_TARGET_COLUMNS,
+    *DERIVED_TARGET_COLUMNS,
 )
 
 # Variables cuya información puede revelar directamente la decisión profesional
@@ -114,6 +110,7 @@ def _riasec_targets(session: AssessmentSession) -> dict[str, Any]:
     result = session.riasec_result
     assert result is not None
     return {
+        "target_protocol_version": TARGET_PROTOCOL_VERSION,
         "score_r": result.score_r,
         "score_i": result.score_i,
         "score_a": result.score_a,
@@ -276,6 +273,14 @@ def build_master_audit_record(session: AssessmentSession) -> dict[str, Any]:
         "has_career_in_mind": session.has_career_in_mind,
         "career_in_mind_text": session.career_in_mind_text,
         "instrument_version": session.instrument_version.code,
+        "instrument_verification_status": (
+            session.instrument_version.verification_status
+        ),
+        "instrument_local_content_hash_sha256": (
+            session.instrument_version.local_content_hash_sha256
+        ),
+        "scoring_spec_sha256": session.instrument_version.scoring_spec_sha256,
+        "collection_phase": session.collection_phase,
     }
 
     ordered_responses = sorted(
