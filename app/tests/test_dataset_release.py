@@ -128,15 +128,39 @@ def test_final_release_remains_blocked_without_professional_verification(
         DatasetReleaseError,
         freeze_dataset_release,
     )
+    from app.services.quality_service import (
+        automatic_quality_state,
+        run_automatic_quality_check,
+    )
 
     sessions = _eligible_sessions(assessment_builder, count=5)
     for assessment in sessions:
         assessment.collection_phase = "final"
     db.session.commit()
 
+    # Fase 6: cambiar un dato incluido en el snapshot invalida el QC anterior.
+    assert all(
+        automatic_quality_state(assessment) == "stale"
+        for assessment in sessions
+    )
+
+    # Al reevaluar como muestra final, la ausencia de validación profesional
+    # queda registrada explícitamente como blocker del protocolo automático.
+    checks = [
+        run_automatic_quality_check(assessment)
+        for assessment in sessions
+    ]
+    assert all(check.status == "blocked" for check in checks)
+    assert all(
+        "final_instrument_verified" in check.observations_json["blockers"]
+        for check in checks
+    )
+
+    # Un release científico consume solo sesiones con QC vigente y aprobado;
+    # por ello estas sesiones quedan fuera antes de llegar a la congelación.
     with pytest.raises(
         DatasetReleaseError,
-        match="validación profesional/local documentada",
+        match="No hay sesiones elegibles",
     ):
         freeze_dataset_release(
             version="RIASEC_FINAL_TEST_V1",
