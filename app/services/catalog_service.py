@@ -292,6 +292,18 @@ def _seed_instrument(summary: dict[str, int]) -> InstrumentVersion:
             actual=instrument.source_name,
             expected="O*NET Web Services",
         )
+        if instrument.license_name in {
+            None,
+            "O*NET Career Exploration Tools Content License",
+        }:
+            instrument.license_name = "O*NET Tools Developer License"
+            instrument.license_url = "https://www.onetcenter.org/license_tools.html"
+        else:
+            _assert_equal(
+                label="Instrument.license_name",
+                actual=instrument.license_name,
+                expected="O*NET Tools Developer License",
+            )
 
     version = db.session.execute(
         select(InstrumentVersion).where(
