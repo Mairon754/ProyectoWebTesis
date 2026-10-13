@@ -18,7 +18,7 @@ class ExperimentRun(db.Model):
     __tablename__ = "experiment_runs"
 
     id = db.Column(db.Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    run_code = db.Column(db.String(40), nullable=False, unique=True, index=True)
+    run_code = db.Column(db.String(40), nullable=False, unique=True)
     protocol_version = db.Column(db.String(60), nullable=False)
     dataset_release_id = db.Column(
         db.Uuid(as_uuid=True),
