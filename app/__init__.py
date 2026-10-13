@@ -71,6 +71,41 @@ def _register_cli_commands(app: Flask) -> None:
         for key, value in status["counts"].items():
             expected = status["expected_minimum"][key]
             click.echo(f"  {key}: {value}/{expected}")
+        click.echo(
+            "instrument_verification_status: "
+            f"{status['instrument_verification_status']}"
+        )
+
+    @app.cli.command("scientific-status")
+    def scientific_status_command() -> None:
+        """Muestra trazabilidad científica del instrumento RIASEC local."""
+
+        from .services.catalog_service import get_catalog_status
+        from .services.riasec_protocol import (
+            SCORING_SPEC_SHA256,
+            SCORING_VERSION,
+            TARGET_PROTOCOL_VERSION,
+        )
+
+        try:
+            status = get_catalog_status()
+        except Exception as exc:
+            app.logger.exception("No fue posible consultar estado científico.")
+            raise click.ClickException(
+                "No fue posible consultar el estado científico RIASEC."
+            ) from exc
+
+        click.echo(
+            "instrument_verification_status: "
+            f"{status['instrument_verification_status']}"
+        )
+        click.echo(
+            "instrument_local_content_hash_sha256: "
+            f"{status['instrument_local_content_hash_sha256']}"
+        )
+        click.echo(f"scoring_version: {SCORING_VERSION}")
+        click.echo(f"scoring_spec_sha256: {SCORING_SPEC_SHA256}")
+        click.echo(f"target_protocol_version: {TARGET_PROTOCOL_VERSION}")
 
 
 def _register_security_headers(app: Flask) -> None:
