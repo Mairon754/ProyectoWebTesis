@@ -995,3 +995,42 @@ def finalize_assessment(session_id: uuid.UUID | str) -> AssessmentSession:
     except Exception:
         db.session.rollback()
         raise
+
+
+
+def purge_participant_data(participant_code: str) -> dict[str, int | str]:
+    """Elimina de PostgreSQL los registros ligados a un código participante.
+
+    Esta operación apoya retiro/depuración de datos dentro de la base activa.
+    No afirma borrado físico de copias de seguridad, snapshots o almacenamiento
+    administrado fuera de PostgreSQL; esos soportes requieren el procedimiento
+    operativo de retención y destrucción del proyecto.
+    """
+
+    code = _clean_text(participant_code, required=True)
+    assert code is not None
+    code = code.upper()
+
+    participant = db.session.execute(
+        select(Participant).where(Participant.participant_code == code)
+    ).scalar_one_or_none()
+    if participant is None:
+        raise AssessmentNotFoundError(
+            "No existe un participante con el código indicado."
+        )
+
+    session_count = len(participant.assessment_sessions)
+    consent_count = len(participant.consent_records)
+
+    try:
+        db.session.delete(participant)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
+
+    return {
+        "participant_code": code,
+        "assessment_sessions_deleted": session_count,
+        "consent_records_deleted": consent_count,
+    }
