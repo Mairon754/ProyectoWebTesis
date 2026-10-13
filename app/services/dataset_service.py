@@ -52,7 +52,7 @@ ML_TARGET_COLUMNS: tuple[str, ...] = (
 PRIMARY_EXPERIMENT_CONTRACT_VERSION = "VOC_RIASEC_TEXT_X_V1"
 PRIMARY_EXPERIMENT_PREDICTORS: tuple[str, ...] = ("texto_combinado",)
 PRIMARY_EXPERIMENT_METADATA: tuple[str, ...] = (
-    "participant_code",
+    "record_id",
     "collection_phase",
 )
 PRIMARY_EXPERIMENT_DERIVED_TARGETS: tuple[str, ...] = (
