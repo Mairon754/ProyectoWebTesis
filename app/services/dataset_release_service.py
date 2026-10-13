@@ -179,6 +179,72 @@ def dataset_contract() -> dict[str, Any]:
     }
 
 
+def dataset_dictionary() -> dict[str, Any]:
+    """Diccionario de datos del contrato experimental primario."""
+
+    return {
+        "contract_version": PRIMARY_EXPERIMENT_CONTRACT_VERSION,
+        "columns": {
+            "participant_code": {
+                "role": "metadata",
+                "description": (
+                    "Código seudónimo aleatorio para trazabilidad; no usar como X."
+                ),
+            },
+            "collection_phase": {
+                "role": "metadata",
+                "description": "Fase de recolección pilot/final; no usar como X.",
+            },
+            "texto_combinado": {
+                "role": "predictor",
+                "description": (
+                    "Texto T01-T03 concatenado con separador [SEP]. "
+                    "Es la X común del experimento principal."
+                ),
+            },
+            **{
+                column: {
+                    "role": "primary_target",
+                    "description": (
+                        "Puntaje RIASEC dimensional de referencia en escala 0-40."
+                    ),
+                }
+                for column in PRIMARY_TARGET_COLUMNS
+            },
+            "profile_1": {
+                "role": "derived_target",
+                "description": "Primera dimensión solo cuando existe máximo único.",
+            },
+            "profile_2": {
+                "role": "derived_target",
+                "description": "Segunda posición ordenada cuando es inequívoca.",
+            },
+            "profile_3": {
+                "role": "derived_target",
+                "description": "Tercera posición ordenada cuando es inequívoca.",
+            },
+            "holland_code": {
+                "role": "derived_target",
+                "description": (
+                    "Código Holland de tres letras solo si las tres posiciones "
+                    "superiores son únicas."
+                ),
+            },
+            "tie_top1": {
+                "role": "derived_target",
+                "description": "Indica empate exacto en la puntuación máxima.",
+            },
+            "split": {
+                "role": "partition",
+                "description": "Partición congelada: train, validation o test.",
+            },
+        },
+        "predictor_columns": list(PRIMARY_EXPERIMENT_PREDICTORS),
+        "primary_target_columns": list(PRIMARY_TARGET_COLUMNS),
+        "derived_target_columns": list(PRIMARY_EXPERIMENT_DERIVED_TARGETS),
+    }
+
+
 def _eligible_for_release(collection_phase: str):
     sessions = get_eligible_sessions(included_ml_only=True)
     selected = [
