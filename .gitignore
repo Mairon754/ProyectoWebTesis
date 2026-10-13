@@ -37,3 +37,15 @@ Thumbs.db
 data/raw/
 data/private/
 exports/
+
+# Artefactos experimentales y pesos locales
+artifacts/
+checkpoints/
+models/checkpoints/
+wandb/
+mlruns/
+.ipynb_checkpoints/
+*.pt
+*.pth
+*.ckpt
+*.safetensors
