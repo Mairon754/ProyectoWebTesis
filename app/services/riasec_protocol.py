@@ -8,10 +8,11 @@ Este módulo separa tres conceptos que no deben confundirse:
 2. regla computacional de puntuación;
 3. definición de las variables objetivo Y.
 
-La propuesta suministrada no identifica con suficiente precisión la versión
-exacta, manual de puntuación ni evidencia documental de la adaptación usada.
-Por ello, la implementación permanece científicamente "unverified" hasta que
-esa evidencia sea incorporada y revisada.
+La fuente oficial externa fue contrastada el 2026-10-13 contra O*NET® Web
+Services (Mi Próximo Paso) y el manual técnico del O*NET® Interest Profiler.
+Los 60 ítems locales, su orden y asignación RIASEC coinciden con la forma corta
+española publicada por el servicio. La validación global del producto sigue
+separada de esta verificación de procedencia.
 """
 
 from __future__ import annotations
@@ -33,9 +34,16 @@ INSTRUMENT_VERIFICATION_STATUSES = {
     INSTRUMENT_VERIFICATION_REJECTED,
 }
 
-# La regla computacional aún no se presenta como regla psicométrica validada
-# por una fuente documental del corpus.
-SCORING_VERSION = "RIASEC_SCORING_PROVISIONAL_V1"
+# Regla de puntuación confirmada contra el manual técnico oficial:
+# entrada web 1-5, transformación equivalente a 0-4 y suma de 10 ítems por
+# dimensión, con rango final 0-40.
+SCORING_VERSION = "ONET_IP_SHORT_FORM_SCORING_V1"
+
+SOURCE_QUESTION_LIST_REVISION = "2018-05-01"
+SOURCE_VERIFICATION_DATE = "2026-10-13"
+OFFICIAL_SOURCE_MANIFEST_SHA256 = (
+    "c30279b792fde80681f96f1c3108ccbedbcb7547dbdee29a90c2d48221433c43"
+)
 
 # Los seis puntajes dimensionales son el objetivo primario. Los perfiles
 # ordenados y el código Holland son salidas derivadas.
@@ -110,8 +118,9 @@ def instrument_content_sha256(
 ) -> str:
     """Hash del contenido LOCAL congelado.
 
-    Detecta cambios del manifiesto almacenado en el repositorio. No demuestra
-    por sí mismo coincidencia con una fuente externa ni validez psicométrica.
+    Detecta cambios del manifiesto almacenado en el repositorio. La igualdad
+    con OFFICIAL_SOURCE_MANIFEST_SHA256 permite comprobar que el contenido
+    local sigue siendo el mismo que fue contrastado con la fuente oficial.
     """
 
     return _sha256_json(instrument_manifest(items))
