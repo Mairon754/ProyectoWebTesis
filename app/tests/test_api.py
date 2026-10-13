@@ -210,6 +210,18 @@ def test_research_module_requires_login_and_exports_csv(
     assert b"participant_code" in exported.data
     assert b"score_r" in exported.data
 
+    from sqlalchemy import select
+
+    from app.extensions import db
+    from app.models import ResearchAuditEvent
+
+    events = db.session.execute(
+        select(ResearchAuditEvent).where(
+            ResearchAuditEvent.action == "dataset_export"
+        )
+    ).scalars().all()
+    assert any(event.resource_id == "ml" for event in events)
+
 
 
 def test_assessment_uuid_alone_does_not_grant_access(
