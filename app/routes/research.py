@@ -369,6 +369,7 @@ def update_quality(session_id: uuid.UUID):
             included_ml=request.form.get("included_ml") == "1",
             exclusion_reason=request.form.get("exclusion_reason") or None,
             dataset_version=request.form.get("dataset_version") or None,
+            commit=False,
         )
         _audit_research_event(
             action="quality_review_update",
