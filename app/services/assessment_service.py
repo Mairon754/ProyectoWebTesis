@@ -41,6 +41,7 @@ from app.services.riasec_service import (
     RiasecScoringError,
     calculate_session_result,
 )
+from app.services.quality_service import run_automatic_quality_check
 from app.services.riasec_protocol import INSTRUMENT_VERIFICATION_VERIFIED
 
 DEFAULT_INSTRUMENT_VERSION = "IP_ES_60_V1"
@@ -987,6 +988,8 @@ def finalize_assessment(session_id: uuid.UUID | str) -> AssessmentSession:
             int((now - assessment.started_at).total_seconds()),
             0,
         )
+        db.session.flush()
+        run_automatic_quality_check(assessment, commit=False)
         db.session.commit()
         return assessment
     except (RiasecScoringError, AssessmentServiceError):
