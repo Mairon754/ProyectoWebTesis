@@ -303,6 +303,7 @@ def review_session_quality(
     included_ml: bool = False,
     exclusion_reason: str | None = None,
     dataset_version: str | None = None,
+    commit: bool = True,
 ) -> DataQualityReview:
     """Crea o actualiza la decisión de calidad de una sesión.
 
@@ -353,7 +354,10 @@ def review_session_quality(
     review.reviewed_at = datetime.now(timezone.utc)
 
     try:
-        db.session.commit()
+        if commit:
+            db.session.commit()
+        else:
+            db.session.flush()
     except Exception:
         db.session.rollback()
         raise
