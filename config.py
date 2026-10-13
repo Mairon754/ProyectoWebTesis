@@ -36,6 +36,11 @@ class BaseConfig:
     # Fase de recolección: "pilot" mantiene pruebas controladas; "final" activa
     # los criterios estrictos de la muestra principal de grado 11.
     COLLECTION_PHASE = os.getenv("COLLECTION_PHASE", "pilot").strip().lower()
+    AUTHORIZED_INSTITUTION_CODES = tuple(
+        code.strip().upper()
+        for code in os.getenv("AUTHORIZED_INSTITUTION_CODES", "").split(",")
+        if code.strip()
+    )
 
     SESSION_COOKIE_NAME = "riasec_session"
     SESSION_COOKIE_HTTPONLY = True
@@ -132,6 +137,14 @@ def validate_config(config_name: str, config_class: type[BaseConfig]) -> None:
     if config_class.COLLECTION_PHASE not in {"pilot", "final"}:
         raise RuntimeError(
             "COLLECTION_PHASE debe ser 'pilot' o 'final'."
+        )
+
+    if (
+        config_class.COLLECTION_PHASE == "final"
+        and not config_class.AUTHORIZED_INSTITUTION_CODES
+    ):
+        raise RuntimeError(
+            "COLLECTION_PHASE=final requiere AUTHORIZED_INSTITUTION_CODES."
         )
 
     if config_name != "production":
