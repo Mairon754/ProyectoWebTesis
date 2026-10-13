@@ -75,3 +75,28 @@ def test_sensitive_pages_receive_security_headers(monkeypatch):
     assert response.headers["X-Frame-Options"] == "DENY"
     assert response.headers["Referrer-Policy"] == "no-referrer"
     assert response.headers["Cache-Control"] == "no-store, private"
+
+
+
+def test_production_rejects_invalid_researcher_role(monkeypatch):
+    monkeypatch.setattr(ProductionConfig, "SECRET_KEY", "x" * 48)
+    monkeypatch.setattr(
+        ProductionConfig,
+        "SQLALCHEMY_DATABASE_URI",
+        "postgresql+psycopg://user:pass@db/riasec",
+    )
+    monkeypatch.setattr(
+        ProductionConfig,
+        "RESEARCHER_ACCOUNTS",
+        [
+            {
+                "username": "investigador",
+                "display_name": "Investigador",
+                "password_hash": "scrypt:32768:8:1$hash-valido",
+                "role": "superadmin",
+            }
+        ],
+    )
+
+    with pytest.raises(RuntimeError, match="viewer.*data_manager"):
+        validate_config("production", ProductionConfig)
