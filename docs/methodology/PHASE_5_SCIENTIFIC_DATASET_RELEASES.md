@@ -17,7 +17,7 @@ Para la comparación principal entre arquitecturas se fija una entrada común:
 - **X primaria:** `texto_combinado`, construido a partir de T01–T03 y separado mediante `[SEP]`.
 - **Y primaria:** los seis puntajes `score_r, score_i, score_a, score_s, score_e, score_c`.
 - **Y derivada:** `profile_1, profile_2, profile_3, holland_code, tie_top1`.
-- **Metadatos no predictivos:** `participant_code` y `collection_phase`.
+- **Metadatos no predictivos del paquete:** `record_id` y `collection_phase`. El `participant_code` fuente se conserva únicamente en la tabla interna de membresía y no se exporta en el release.
 
 Las respuestas IP01–IP60, los puntajes RIASEC y los metadatos de participante no forman parte de X. Esto evita fuga de información y obliga a que las arquitecturas comparadas reciban la misma evidencia semántica.
 
@@ -80,7 +80,7 @@ Cada release persiste:
 - snapshot JSON de cada registro;
 - split y hash SHA-256 individual por registro.
 
-Los snapshots no dependen de las tablas vivas del participante. Esto permite conservar trazabilidad del release aun si posteriormente se depuran registros operativos conforme al procedimiento ético del proyecto.
+Los snapshots no dependen de las tablas vivas del participante. Cada archivo exportado usa un `record_id` específico del release y no expone el `participant_code` de la base operativa. La tabla interna de membresía conserva la vinculación necesaria para auditoría mientras exista la base controlada.
 
 ## Balance
 
