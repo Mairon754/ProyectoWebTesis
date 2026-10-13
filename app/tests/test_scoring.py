@@ -4,6 +4,13 @@ from __future__ import annotations
 
 import pytest
 
+from app.services.riasec_protocol import (
+    PRIMARY_TARGET_COLUMNS,
+    SCORING_SPEC_SHA256,
+    SCORING_VERSION,
+    TARGET_PROTOCOL_VERSION,
+    instrument_content_sha256,
+)
 from app.services.riasec_service import (
     RiasecScoringError,
     build_result_payload,
@@ -88,3 +95,42 @@ def test_scoring_rejects_duplicate_or_incomplete_items():
 
     with pytest.raises(RiasecScoringError):
         calculate_scores(_responses({code: 3 for code in RIASEC_CODES})[:-1])
+
+
+
+def test_scoring_payload_exposes_reproducible_protocol_metadata():
+    responses = _responses({code: 3 for code in RIASEC_CODES})
+
+    payload = build_result_payload(responses)
+
+    assert payload["scoring_version"] == SCORING_VERSION
+    assert payload["scoring_spec_sha256"] == SCORING_SPEC_SHA256
+    assert payload["target_protocol_version"] == TARGET_PROTOCOL_VERSION
+    assert PRIMARY_TARGET_COLUMNS == (
+        "score_r",
+        "score_i",
+        "score_a",
+        "score_s",
+        "score_e",
+        "score_c",
+    )
+
+
+def test_local_instrument_hash_is_deterministic_and_content_sensitive():
+    items = (
+        (1, "R", "Texto uno"),
+        (2, "I", "Texto dos"),
+    )
+
+    first = instrument_content_sha256(items)
+    second = instrument_content_sha256(items)
+    changed = instrument_content_sha256(
+        (
+            (1, "R", "Texto uno modificado"),
+            (2, "I", "Texto dos"),
+        )
+    )
+
+    assert len(first) == 64
+    assert first == second
+    assert first != changed
