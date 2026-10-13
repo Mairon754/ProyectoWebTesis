@@ -329,16 +329,23 @@ def _seed_instrument(summary: dict[str, int]) -> InstrumentVersion:
             actual=version.total_items,
             expected=60,
         )
-        _assert_equal(
-            label="InstrumentVersion.local_content_hash_sha256",
-            actual=version.local_content_hash_sha256,
-            expected=local_content_hash,
-        )
-        _assert_equal(
-            label="InstrumentVersion.scoring_spec_sha256",
-            actual=version.scoring_spec_sha256,
-            expected=SCORING_SPEC_SHA256,
-        )
+        if version.local_content_hash_sha256 is None:
+            version.local_content_hash_sha256 = local_content_hash
+        else:
+            _assert_equal(
+                label="InstrumentVersion.local_content_hash_sha256",
+                actual=version.local_content_hash_sha256,
+                expected=local_content_hash,
+            )
+
+        if version.scoring_spec_sha256 is None:
+            version.scoring_spec_sha256 = SCORING_SPEC_SHA256
+        else:
+            _assert_equal(
+                label="InstrumentVersion.scoring_spec_sha256",
+                actual=version.scoring_spec_sha256,
+                expected=SCORING_SPEC_SHA256,
+            )
 
     return version
 
