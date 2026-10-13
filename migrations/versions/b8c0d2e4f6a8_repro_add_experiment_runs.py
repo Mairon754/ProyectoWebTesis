@@ -65,16 +65,9 @@ def upgrade():
         ["dataset_release_id"],
         unique=False,
     )
-    op.create_index(
-        op.f("ix_experiment_runs_run_code"),
-        "experiment_runs",
-        ["run_code"],
-        unique=True,
-    )
 
 
 def downgrade():
-    op.drop_index(op.f("ix_experiment_runs_run_code"), table_name="experiment_runs")
     op.drop_index(
         op.f("ix_experiment_runs_dataset_release_id"),
         table_name="experiment_runs",
