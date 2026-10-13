@@ -13,7 +13,7 @@ from .extensions import db, migrate
 
 
 def _register_blueprints(app: Flask) -> None:
-    """Registra todas las rutas HTTP definidas para la Fase 4."""
+    """Registra los módulos HTTP de la plataforma."""
 
     from .routes.api import api_bp
     from .routes.assessment import assessment_bp
@@ -73,6 +73,40 @@ def _register_cli_commands(app: Flask) -> None:
             click.echo(f"  {key}: {value}/{expected}")
 
 
+def _register_security_headers(app: Flask) -> None:
+    """Aplica una línea base de cabeceras de seguridad."""
+
+    sensitive_prefixes = (
+        "/assessment",
+        "/results",
+        "/investigacion",
+        "/api/",
+        "/consent",
+        "/demographics",
+    )
+
+    @app.after_request
+    def apply_security_headers(response):
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault("Referrer-Policy", "no-referrer")
+        response.headers.setdefault(
+            "Permissions-Policy",
+            "camera=(), microphone=(), geolocation=()",
+        )
+
+        if request.path.startswith(sensitive_prefixes):
+            response.headers.setdefault("Cache-Control", "no-store, private")
+            response.headers.setdefault("Pragma", "no-cache")
+
+        if app.config.get("SESSION_COOKIE_SECURE"):
+            response.headers.setdefault(
+                "Strict-Transport-Security",
+                "max-age=31536000; includeSubDomains",
+            )
+
+        return response
+
 
 def _register_error_handlers(app: Flask) -> None:
     """Devuelve errores JSON consistentes para rutas bajo /api/."""
@@ -108,16 +142,9 @@ def _register_error_handlers(app: Flask) -> None:
             return api_error("Ocurrió un error interno inesperado.", 500)
         return error
 
+
 def create_app(config_name: str | None = None) -> Flask:
-    """Construye y configura una instancia de Flask.
-
-    Args:
-        config_name: ``development``, ``testing`` o ``production``. Si se
-        omite, se toma de ``APP_ENV`` y luego se usa ``development``.
-
-    Returns:
-        Aplicación Flask configurada.
-    """
+    """Construye y configura una instancia de Flask."""
 
     selected_config = (
         config_name or os.getenv("APP_ENV", "development")
@@ -138,12 +165,12 @@ def create_app(config_name: str | None = None) -> Flask:
 
     db.init_app(app)
 
-    # Importar modelos antes de Flask-Migrate mantiene db.metadata completo.
     from . import models  # noqa: F401, PLC0415
 
     migrate.init_app(app, db)
     _register_blueprints(app)
     _register_error_handlers(app)
+    _register_security_headers(app)
     _register_cli_commands(app)
 
     app.logger.info(
