@@ -138,6 +138,9 @@ def assessment_builder(
             consent_version=CURRENT_CONSENT_VERSION,
             consent_accepted=True,
             assent_accepted=True,
+            guardian_consent_required=True,
+            guardian_consent_reference="GUARD-TEST-001",
+            collection_method="institutional",
         )
 
         if fill:
