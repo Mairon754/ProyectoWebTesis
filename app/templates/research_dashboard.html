@@ -218,6 +218,9 @@
             <span>Válidas: <strong>{{ summary.quality_valid }}</strong></span>
             <span>Pendientes: <strong>{{ summary.quality_pending }}</strong></span>
             <span>Excluidas: <strong>{{ summary.quality_excluded }}</strong></span>
+            <span>QC automático aprobado: <strong>{{ summary.automatic_quality_passed }}</strong></span>
+            <span>QC automático bloqueado: <strong>{{ summary.automatic_quality_blocked }}</strong></span>
+            <span>QC pendiente/desactualizado: <strong>{{ summary.automatic_quality_not_run + summary.automatic_quality_stale }}</strong></span>
         </div>
     </div>
 
