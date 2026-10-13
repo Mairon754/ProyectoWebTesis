@@ -297,3 +297,58 @@ def test_viewer_cannot_export_master_dataset(
         assert denied.status_code == 403
     finally:
         app.config["RESEARCHER_ACCOUNTS"] = previous_accounts
+
+
+
+def test_researcher_session_invalidates_after_credential_change(
+    app,
+    client,
+    db_context,
+):
+    from werkzeug.security import generate_password_hash
+
+    previous_accounts = app.config["RESEARCHER_ACCOUNTS"]
+    original_hash = generate_password_hash("ClavePrueba123!")
+    app.config["RESEARCHER_ACCOUNTS"] = [
+        {
+            "username": "investigador",
+            "display_name": "Investigador",
+            "password_hash": original_hash,
+            "role": "data_manager",
+        }
+    ]
+
+    try:
+        client.get("/investigacion/login")
+        with client.session_transaction() as flask_session:
+            csrf_token = flask_session["research_csrf_token"]
+
+        login = client.post(
+            "/investigacion/login",
+            data={
+                "csrf_token": csrf_token,
+                "username": "investigador",
+                "password": "ClavePrueba123!",
+            },
+        )
+        assert login.status_code == 302
+
+        dashboard = client.get("/investigacion")
+        assert dashboard.status_code == 200
+
+        app.config["RESEARCHER_ACCOUNTS"] = [
+            {
+                "username": "investigador",
+                "display_name": "Investigador",
+                "password_hash": generate_password_hash("NuevaClave123!"),
+                "role": "data_manager",
+            }
+        ]
+
+        invalidated = client.get("/investigacion", follow_redirects=False)
+        assert invalidated.status_code == 302
+        assert "/investigacion/login" in invalidated.headers["Location"]
+        with client.session_transaction() as flask_session:
+            assert "researcher_username" not in flask_session
+    finally:
+        app.config["RESEARCHER_ACCOUNTS"] = previous_accounts
