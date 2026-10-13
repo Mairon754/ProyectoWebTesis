@@ -208,7 +208,6 @@ def build_ml_record(session: AssessmentSession) -> dict[str, Any]:
 
     record: dict[str, Any] = {
         "participant_code": session.participant.participant_code,
-        "session_id": str(session.id),
         "age": session.age,
         "grade": session.grade,
         "municipality": session.municipality,
@@ -244,7 +243,6 @@ def build_transformer_record(session: AssessmentSession) -> dict[str, Any]:
     texts = _open_text_features(session)
     return {
         "participant_code": session.participant.participant_code,
-        "session_id": str(session.id),
         "collection_phase": session.collection_phase,
         **texts,
         **_riasec_targets(session),
@@ -436,6 +434,18 @@ def build_dataset(
     return records
 
 
+def _tabular_safe_value(value: Any) -> Any:
+    """Neutraliza fórmulas al exportar texto controlado por participantes.
+
+    CSV/XLSX pueden interpretar cadenas que empiezan con =, +, - o @ como
+    fórmulas. Se antepone un apóstrofo para conservar el texto como dato.
+    """
+
+    if isinstance(value, str) and value.startswith(("=", "+", "-", "@")):
+        return "'" + value
+    return value
+
+
 def export_records_to_csv(records: Iterable[dict[str, Any]]) -> str:
     """Serializa registros a CSV UTF-8 usando solo la biblioteca estándar.
 
@@ -463,7 +473,9 @@ def export_records_to_csv(records: Iterable[dict[str, Any]]) -> str:
     )
     writer.writeheader()
     for row in rows:
-        writer.writerow(row)
+        writer.writerow(
+            {key: _tabular_safe_value(value) for key, value in row.items()}
+        )
     return buffer.getvalue()
 
 # ---------------------------------------------------------------------------
@@ -717,7 +729,6 @@ def build_results_record(session: AssessmentSession) -> dict[str, Any]:
     assert result is not None
     return {
         "participant_code": session.participant.participant_code,
-        "session_id": str(session.id),
         "age": session.age,
         "grade": session.grade,
         "institution_code": session.institution_code,
@@ -856,7 +867,8 @@ def export_records_to_xlsx(
 
         def excel_safe(value: Any) -> Any:
             if isinstance(value, str):
-                return ILLEGAL_CHARACTERS_RE.sub("", value)
+                sanitized = ILLEGAL_CHARACTERS_RE.sub("", value)
+                return _tabular_safe_value(sanitized)
             if isinstance(value, (list, tuple, set)):
                 return "|".join(str(item) for item in value)
             if isinstance(value, dict):
